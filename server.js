@@ -1,3 +1,9 @@
+/**
+ * Job Board Platform - Backend API
+ * Developer: Anjolaoluwa Bawaallah-Olufemi
+ * Matric Number: 24120111024
+ * Role: Backend Team - API Routes, Controllers, Middleware & Models
+ */
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
