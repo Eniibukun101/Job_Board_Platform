@@ -1,13 +1,16 @@
 /**
  * Job Board Platform - Backend API
- * Developer: Anjolaoluwa Bawaallah-Olufemi
- * Matric Number: 24120111024
+ * Developer: [Your Full Name]
+ * Matric Number: [Your Matric Number]
  * Role: Backend Team - API Routes, Controllers, Middleware & Models
  */
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
 const sequelize = require('./config/database');
+const { generalLimiter } = require('./middleware/rateLimiter');
 
 // Load models with associations
 require('./models');
@@ -19,6 +22,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(helmet());                    // Adds security headers
+app.use(generalLimiter);              // Rate limiting - 100 requests per 15 min
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
