@@ -1,7 +1,7 @@
 /**
  * Job Board Platform - Backend API
- * Developer: [Your Full Name]
- * Matric Number: [Your Matric Number]
+ * Developer: Anjolaoluwa Bawaallah-Olufemi
+ * Matric Number: 24120111024
  * Role: Backend Team - API Routes, Controllers, Middleware & Models
  */
 
