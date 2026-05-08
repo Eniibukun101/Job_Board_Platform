@@ -1,3 +1,10 @@
+/**
+ * Job Board Platform - Backend API
+ * Developer: Anjolaoluwa Bawaallah-Olufemi
+ * Matric Number: 24120111024
+ * Role: Backend Team - Jobs Controller
+ */
+
 const { Op } = require('sequelize');
 const { Job, User } = require('../models');
 

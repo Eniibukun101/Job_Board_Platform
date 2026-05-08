@@ -1,3 +1,10 @@
+/**
+ * Job Board Platform - Backend API
+ * Developer: Anjolaoluwa Bawaallah-Olufemi
+ * Matric Number: 24120111024
+ * Role: Backend Team - Applications Controller
+ */
+
 const { Application, Job, User } = require('../models');
 
 // @desc    Apply for a job

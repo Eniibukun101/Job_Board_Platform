@@ -1,3 +1,10 @@
+/**
+ * Job Board Platform - Backend API
+ * Developer: Anjolaoluwa Bawaallah-Olufemi
+ * Matric Number: 24120111024
+ * Role: Backend Team - Authentication Controller
+ */
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
