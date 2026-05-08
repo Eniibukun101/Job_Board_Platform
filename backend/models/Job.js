@@ -40,12 +40,24 @@ const Job = sequelize.define('Job', {
     defaultValue: 'Mid'
   },
   skills: {
-    type: DataTypes.JSON,
-    defaultValue: []
+    type: DataTypes.TEXT,
+    defaultValue: '[]',
+    get() {
+      const val = this.getDataValue('skills');
+      return val ? JSON.parse(val) : [];
+    },
+    set(val) {
+      this.setDataValue('skills', JSON.stringify(val));
+    }
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  // Links job to the employer who posted it
+  postedBy: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 }, {
   timestamps: true
