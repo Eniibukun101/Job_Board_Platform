@@ -12,3 +12,16 @@ A full-stack job board web application where employers can post job listings and
 Project Overview
 
 The Job Board Platform allows two types of users — employers and job seekers. Employers can create accounts, post jobs, and manage their listings. Job seekers can browse available positions, filter by category or location, and submit applications. The platform is built as a RESTful API on the backend and a React single-page application on the frontend.
+
+
+
+Tech Stack
+Backend
+
+Node.js
+Express.js
+MongoDB (via Mongoose)
+JSON Web Tokens (JWT) for authentication
+bcryptjs for password hashing
+dotenv for environment config
+cors for cross-origin requests
