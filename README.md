@@ -15,13 +15,20 @@ The Job Board Platform allows two types of users — employers and job seekers. 
 
 
 
-Tech Stack
+#Tech Stack
+
 Backend
 
 Node.js
+
 Express.js
+
 MongoDB (via Mongoose)
+
 JSON Web Tokens (JWT) for authentication
+
 bcryptjs for password hashing
+
 dotenv for environment config
+
 cors for cross-origin requests
