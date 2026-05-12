@@ -15,7 +15,7 @@ The Job Board Platform allows two types of users — employers and job seekers. 
 
 
 
-#Tech Stack
+Tech Stack
 
 Backend
 
