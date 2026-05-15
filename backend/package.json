@@ -20,6 +20,9 @@
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/node": "^25.8.0",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   }
 }
