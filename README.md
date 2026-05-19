@@ -18,4 +18,5 @@ Run 'npm start'
 See '.env.example'
 
 ## Live Link 
-Coming soon
+Backend API : https://job-board-platform-msw6.onrender.com/
+Frontenf API :(coming soon)
