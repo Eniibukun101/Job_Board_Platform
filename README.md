@@ -37,3 +37,53 @@ Git & GitHub
 Postman (API testing)
 MongoDB Atlas (cloud database)
 Render / Railway (deployment)
+
+Getting Started
+
+Prerequisites
+
+Make sure you have the following installed:
+
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [npm](https://www.npmjs.com/)
+- [Git](https://git-scm.com/)
+
+Installation
+
+1. Clone the repository
+
+bash
+git clone https://github.com/your-group/job-board-platform.git
+cd job-board-platform
+
+
+2. Install backend dependencies
+
+bash
+cd backend
+npm install
+
+
+3. Install frontend dependencies
+
+bash
+cd ../frontend
+npm install
+
+4. Set up environment variables
+
+See the [Environment Variables](#environment-variables) section below.
+
+5. Run the backend
+
+bash
+cd backend
+npm run dev
+
+
+6. Run the frontend
+
+bash
+cd frontend
+npm start
+
