@@ -1,3 +1,14 @@
+/**
+ * Job Board Platform - Input Validation Middleware
+ * Developer: Anjolaoluwa Bawaallah-Olufemi
+ * Matric Number: 24120111024
+ * 
+ * This file validates all incoming request data before
+ * it reaches the controllers. It uses express-validator
+ * to check fields like email format, password length,
+ * required fields etc.
+ */
+
 const { body, validationResult } = require('express-validator');
 
 // Reusable function - checks for validation errors and returns them
