@@ -1,69 +1,30 @@
-# Jobnest - Backend API Documentation
+# Job Board Platform — Backend API
 
 **Developer:** Anjolaoluwa Bawaallah-Olufemi  
 **Matric Number:** 24120111024  
-**Role:** Backend Team - API Routes, Controllers, Middleware & Models
+**Role:** Backend Team — API Routes, Controllers, Middleware & Models
 
 ---
 
-## Overview
+## Live API
 
-This is the backend REST API for **Jobnest** — a Job Board Platform that connects job seekers (Applicants) with companies (Employers). Built with Node.js, Express.js and SQLite.
+**Base URL:** https://job-board-platform-msw6.onrender.com
+
+Test it's running:
+```
+GET https://job-board-platform-msw6.onrender.com/api/health
+```
 
 ---
 
 ## Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| Node.js | JavaScript runtime |
-| Express.js | Web framework |
-| SQLite | Database |
-| Sequelize ORM | Database management |
-| JWT | Authentication |
-| bcryptjs | Password hashing |
-| helmet | Security headers |
-| express-validator | Input validation |
-| express-rate-limit | Rate limiting |
-
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js installed
-- npm installed
-
-### Installation
-
-**1. Clone the repository**
-```bash
-git clone https://github.com/Eniibukun101/Job_Board_Platform.git
-cd Job_Board_Platform/backend
-```
-
-**2. Install dependencies**
-```bash
-npm install
-```
-
-**3. Create your `.env` file** inside the `backend/` folder:
-```
-PORT=5000
-JWT_SECRET=your_secret_key_here
-JWT_EXPIRES_IN=7d
-CORS_ORIGIN=http://localhost:3000
-```
-
-**4. Start the server**
-```bash
-npm run dev
-```
-
-**5. Server runs at:**
-```
-http://localhost:5000
-```
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** SQLite (via Sequelize ORM)
+- **Authentication:** JWT (JSON Web Tokens) + Google OAuth 2.0 (Passport.js)
+- **Security:** Helmet, express-rate-limit, bcryptjs
+- **Language Support:** TypeScript type definitions included
 
 ---
 
@@ -72,315 +33,130 @@ http://localhost:5000
 ```
 backend/
 ├── config/
-│   └── database.js          # SQLite database connection
+│   └── database.js          # SQLite + Sequelize connection
 ├── controllers/
-│   ├── authController.js    # Register, login, profile logic
-│   ├── jobController.js     # Job CRUD + search/filter logic
-│   └── applicationController.js  # Application logic
+│   ├── authController.js    # Register, login, profile, Google OAuth
+│   ├── jobController.js     # CRUD for job listings
+│   └── applicationController.js  # Job applications logic
 ├── middleware/
-│   ├── auth.js              # JWT authentication & role checking
-│   ├── validate.js          # Input validation rules
-│   └── rateLimiter.js       # Rate limiting
+│   ├── auth.js              # JWT token verification
+│   ├── passport.js          # Google OAuth strategy
+│   ├── rateLimiter.js       # Rate limiting (100 req/15min)
+│   └── validate.js          # Input validation
 ├── models/
-│   ├── index.js             # Model associations
-│   ├── User.js              # User model
-│   ├── Job.js               # Job model
-│   └── Application.js       # Application model
+│   ├── User.js              # User model (Applicant / Employer)
+│   ├── Job.js               # Job listing model
+│   ├── Application.js       # Application model
+│   └── index.js             # Model associations
 ├── routes/
-│   ├── auth.js              # Auth routes
+│   ├── auth.js              # Auth routes including Google OAuth
 │   ├── jobs.js              # Job routes
 │   └── applications.js      # Application routes
-├── server.js                # Main entry point
-├── package.json
-└── .env                     # Environment variables (not committed)
+├── types.ts                 # TypeScript type definitions
+├── server.js                # Entry point
+├── .env.example             # Environment variable template
+└── API.md                   # Full API documentation
+```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```
+PORT=5000
+JWT_SECRET=your_secret_key_here
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:3000
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
 ```
 
 ---
 
 ## API Endpoints
 
-### Base URL
-```
-http://localhost:5000
-```
-
 ### Authentication
-All protected routes require this header:
-```
-Authorization: Bearer <token>
-```
-The token is returned when you register or login.
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/register` | Register new user | No |
+| POST | `/api/auth/login` | Login with email & password | No |
+| GET | `/api/auth/me` | Get current user profile | Yes |
+| PUT | `/api/auth/me` | Update user profile | Yes |
+| PUT | `/api/auth/change-password` | Change password | Yes |
+| GET | `/api/auth/google` | Start Google OAuth login | No |
+| GET | `/api/auth/google/callback` | Google OAuth callback | No |
+| GET | `/api/auth/google/failed` | Google OAuth failure handler | No |
+
+### Jobs
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/jobs` | Get all job listings | No |
+| GET | `/api/jobs/:id` | Get single job by ID | No |
+| POST | `/api/jobs` | Create new job listing | Yes (Employer) |
+| PUT | `/api/jobs/:id` | Update job listing | Yes (Employer) |
+| DELETE | `/api/jobs/:id` | Delete job listing | Yes (Employer) |
+| GET | `/api/jobs/employer/my-listings` | Get employer's own jobs | Yes (Employer) |
+
+### Applications
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/applications/:jobId` | Apply for a job | Yes (Applicant) |
+| GET | `/api/applications/my-applications` | Get my applications | Yes (Applicant) |
+| DELETE | `/api/applications/:id` | Withdraw application | Yes (Applicant) |
+| GET | `/api/applications/job/:jobId` | Get applicants for a job | Yes (Employer) |
+| PUT | `/api/applications/:id/status` | Update application status | Yes (Employer) |
+
+### Health
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Check if API is running |
 
 ---
 
-### Auth Routes `/api/auth`
+## Authentication
 
-#### Register a new user
+All protected endpoints require a JWT token in the request header:
+
 ```
-POST /api/auth/register
+Authorization: Bearer <your_token_here>
 ```
-**Body:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "userType": "Applicant",
-  "company": "Company Name (required if Employer)"
-}
-```
-**Response:**
-```json
-{
-  "message": "Account created successfully.",
-  "token": "eyJhbG...",
-  "user": {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com",
-    "userType": "Applicant"
-  }
-}
-```
+
+You get the token after registering or logging in. For Google OAuth, the token is returned as a URL parameter after successful login.
 
 ---
 
-#### Login
-```
-POST /api/auth/login
-```
-**Body:**
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-**Response:**
-```json
-{
-  "message": "Login successful.",
-  "token": "eyJhbG...",
-  "user": { ... }
-}
-```
+## Google OAuth Flow
+
+1. Frontend redirects user to `GET /api/auth/google`
+2. User signs in with their Google account
+3. Backend creates or finds the user in the database
+4. User is redirected to `/auth/success?token=<jwt_token>`
+5. Frontend saves the token and uses it for all future requests
 
 ---
 
-#### Get current user profile
-```
-GET /api/auth/me
-```
-🔒 Requires token
+## User Types
+
+- **Applicant** — can browse jobs and submit applications
+- **Employer** — can post jobs and manage applications
 
 ---
 
-#### Update profile
-```
-PUT /api/auth/me
-```
-🔒 Requires token  
-**Body:** `name`, `phone`, `bio`, `company` (any or all)
+## Running Locally
 
----
+```bash
+# Install dependencies
+npm install
 
-#### Change password
-```
-PUT /api/auth/change-password
-```
-🔒 Requires token  
-**Body:**
-```json
-{
-  "currentPassword": "oldpassword",
-  "newPassword": "newpassword123"
-}
+# Create your .env file
+cp .env.example .env
+# Fill in your values in .env
+
+# Start the server
+npm run dev
 ```
 
----
-
-### Job Routes `/api/jobs`
-
-#### Get all jobs (with search & filters)
-```
-GET /api/jobs
-```
-🌐 Public — no token needed  
-**Query params (all optional):**
-```
-?search=developer
-?location=Lagos
-?jobType=Full-time
-?experience=Mid
-?salaryMin=50000
-?page=1
-?limit=10
-```
-
----
-
-#### Get a single job
-```
-GET /api/jobs/:id
-```
-🌐 Public — no token needed
-
----
-
-#### Post a new job
-```
-POST /api/jobs
-```
-🔒 Requires token — Employers only  
-**Body:**
-```json
-{
-  "title": "Frontend Developer",
-  "description": "We are looking for...",
-  "company": "Tech Corp",
-  "location": "Lagos, Nigeria",
-  "salaryMin": 150000,
-  "salaryMax": 300000,
-  "jobType": "Full-time",
-  "experience": "Mid",
-  "skills": ["React", "JavaScript", "CSS"]
-}
-```
-
----
-
-#### Update a job
-```
-PUT /api/jobs/:id
-```
-🔒 Requires token — Employer who posted the job only
-
----
-
-#### Delete a job
-```
-DELETE /api/jobs/:id
-```
-🔒 Requires token — Employer who posted the job only
-
----
-
-#### Get my job listings
-```
-GET /api/jobs/employer/my-listings
-```
-🔒 Requires token — Employers only
-
----
-
-### Application Routes `/api/applications`
-
-#### Apply for a job
-```
-POST /api/applications/:jobId
-```
-🔒 Requires token — Applicants only  
-**Body:**
-```json
-{
-  "coverLetter": "I am interested in this position because...",
-  "resumeUrl": "https://example.com/my-resume.pdf"
-}
-```
-
----
-
-#### Get my applications
-```
-GET /api/applications/my-applications
-```
-🔒 Requires token — Applicants only
-
----
-
-#### Withdraw an application
-```
-DELETE /api/applications/:id
-```
-🔒 Requires token — Applicant who applied only
-
----
-
-#### Get applications for a job
-```
-GET /api/applications/job/:jobId
-```
-🔒 Requires token — Employer who owns the job only
-
----
-
-#### Update application status
-```
-PUT /api/applications/:id/status
-```
-🔒 Requires token — Employer who owns the job only  
-**Body:**
-```json
-{
-  "status": "Shortlisted"
-}
-```
-**Status options:** `Pending`, `Reviewed`, `Shortlisted`, `Rejected`, `Hired`
-
----
-
-## User Types & Permissions
-
-| Action | Applicant | Employer |
-|---|---|---|
-| Register/Login | ✅ | ✅ |
-| View jobs | ✅ | ✅ |
-| Apply for jobs | ✅ | ❌ |
-| View own applications | ✅ | ❌ |
-| Post jobs | ❌ | ✅ |
-| Edit/Delete own jobs | ❌ | ✅ |
-| View job applicants | ❌ | ✅ |
-| Update application status | ❌ | ✅ |
-
----
-
-## Security Features
-
-- **JWT Authentication** — stateless token-based auth
-- **Password Hashing** — bcryptjs with salt rounds of 12
-- **Helmet** — sets secure HTTP headers
-- **Rate Limiting** — 10 auth attempts / 100 general requests per 15 min
-- **Input Validation** — all inputs validated with express-validator
-- **Role-based Access** — Employer and Applicant have different permissions
-
----
-
-## Health Check
-
-```
-GET /api/health
-```
-Returns server status and timestamp. No token needed.
-
----
-
-## Error Responses
-
-All errors return in this format:
-```json
-{
-  "message": "Description of what went wrong"
-}
-```
-
-| Status Code | Meaning |
-|---|---|
-| 200 | Success |
-| 201 | Created successfully |
-| 400 | Bad request / validation error |
-| 401 | Not authenticated |
-| 403 | Not authorized |
-| 404 | Not found |
-| 409 | Conflict (e.g. email already exists) |
-| 429 | Too many requests |
-| 500 | Server error |
+Server runs on `http://localhost:5000`

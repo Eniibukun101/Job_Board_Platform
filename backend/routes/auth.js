@@ -16,24 +16,4 @@ router.get('/me', protect, getMe);
 router.put('/me', protect, validateUpdateProfile, updateMe);
 router.put('/change-password', protect, validateChangePassword, changePassword);
 
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
-
-// Google Auth routes
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
-);
-
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/api/auth/google/failed', session: false }),
-  (req, res) => {
-    const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
-    res.redirect(`http://localhost:3000/auth/success?token=${token}`);
-  }
-);
-
-router.get('/google/failed', (req, res) => {
-  res.status(401).json({ message: 'Google authentication failed.' });
-});
-
 module.exports = router;
