@@ -17,11 +17,9 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       if (email && password) {
-        // Success - in real app, redirect to dashboard
         console.log('Login successful', { email, savePassword })
       } else {
         setError('Please fill in all fields')
@@ -38,23 +36,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left side - Welcome section */}
+    <div className="relative min-h-screen flex bg-white">
+      {/* Left side - Welcome section (plain) */}
       <WelcomeSection />
 
-      {/* Right side - Login form */}
-      <LoginForm
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        savePassword={savePassword}
-        setSavePassword={setSavePassword}
-        error={error}
-        isLoading={isLoading}
-        onSubmit={handleSubmit}
-        onGoogleSignIn={handleGoogleSignIn}
-      />
+      {/* Right side - Login form in card */}
+      <div className="flex w-full md:w-[48%] items-center justify-center px-6 py-10 md:px-10 min-h-screen">
+        <div className="w-full max-w-lg rounded-[28px] border border-[#F1EAF8] bg-white px-6 py-8 shadow-[0_20px_60px_rgba(45,38,57,0.08)] md:px-10 md:py-10">
+          <LoginForm
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            savePassword={savePassword}
+            setSavePassword={setSavePassword}
+            error={error}
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+            onGoogleSignIn={handleGoogleSignIn}
+          />
+        </div>
+      </div>
     </div>
   )
 }
