@@ -5,31 +5,32 @@
  * Role: Backend Team - API Routes, Controllers, Middleware & Models
  */
 
+const dotenv = require('dotenv');
+dotenv.config(); // MUST be first before any other requires
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const helmet = require('helmet');
 const sequelize = require('./config/database');
 const { generalLimiter } = require('./middleware/rateLimiter');
+const passport = require('./middleware/passport'); // Google OAuth
 
 // Load models with associations
 require('./models');
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(helmet());                    // Adds security headers
-app.use(generalLimiter);              // Rate limiting - 100 requests per 15 min
+app.use(helmet());
+app.use(generalLimiter);
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize()); // Initialize passport
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/auth'));
@@ -65,24 +66,6 @@ sequelize.sync({ alter: true }).then(() => {
   console.log('✅ Database models synced');
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`\n📋 Available endpoints:`);
-    console.log(`   GET    /api/health`);
-    console.log(`   POST   /api/auth/register`);
-    console.log(`   POST   /api/auth/login`);
-    console.log(`   GET    /api/auth/me`);
-    console.log(`   PUT    /api/auth/me`);
-    console.log(`   PUT    /api/auth/change-password`);
-    console.log(`   GET    /api/jobs`);
-    console.log(`   GET    /api/jobs/:id`);
-    console.log(`   POST   /api/jobs`);
-    console.log(`   PUT    /api/jobs/:id`);
-    console.log(`   DELETE /api/jobs/:id`);
-    console.log(`   GET    /api/jobs/employer/my-listings`);
-    console.log(`   POST   /api/applications/:jobId`);
-    console.log(`   GET    /api/applications/my-applications`);
-    console.log(`   DELETE /api/applications/:id`);
-    console.log(`   GET    /api/applications/job/:jobId`);
-    console.log(`   PUT    /api/applications/:id/status`);
   });
 }).catch(err => console.error('❌ Failed to sync database:', err));
 
