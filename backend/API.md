@@ -124,6 +124,56 @@ Authorization: Bearer <token>
 
 ---
 
+### Google OAuth Login
+**GET** `/auth/google`
+
+Redirects user to Google login page.
+
+**Response:**
+Redirects to Google OAuth consent screen
+
+---
+
+### Google OAuth Callback
+**GET** `/auth/google/callback`
+
+Google redirects back here after authentication.
+
+**Query Parameters:**
+- `code` - Authorization code from Google
+- `state` - CSRF protection token
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "token": "eyJhbGc...",
+  "user": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@google.com",
+    "userType": "Applicant"
+  }
+}
+```
+
+---
+
+### Google OAuth Failed
+**GET** `/auth/google/failed`
+
+Called when Google OAuth authentication fails.
+
+**Response:**
+```json
+{
+  "message": "Google authentication failed",
+  "error": "User denied access"
+}
+```
+
+---
+
 ## Job Endpoints
 
 ### Get All Jobs
@@ -358,10 +408,10 @@ All endpoints return errors in this format:
 Create `.env` file:
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/job-board
+SQLITE_PATH=./database.sqlite
 JWT_SECRET=your_secret_key_here
 CORS_ORIGIN=http://localhost:3000
 
 ---
 
-**Last Updated:** May 8, 2026
+**Last Updated:** May 27, 2026
