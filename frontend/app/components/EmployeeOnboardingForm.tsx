@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { updateCurrentUserProfile } from "@/lib/api";
+import { getStoredAuth, updateStoredUser } from "@/lib/auth";
 
 const jobTypes = ["Full time", "Part-time", "Contract", "Internship"];
 
@@ -27,6 +29,58 @@ export default function EmployeeOnboardingForm() {
   const [salaryRange, setSalaryRange] = useState(salaryRanges[0]);
   const [role, setRole] = useState("");
   const [qualification, setQualification] = useState("");
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const storedAuth = getStoredAuth();
+    if (!storedAuth?.user) return;
+
+    setJobType(storedAuth.user.preferredJobType || "Part-time");
+    setSalaryRange(storedAuth.user.expectedSalaryRange || salaryRanges[0]);
+    setRole(storedAuth.user.role || "");
+    setQualification(storedAuth.user.qualification || "");
+  }, []);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError("");
+    setSuccessMessage("");
+
+    const storedAuth = getStoredAuth();
+    if (!storedAuth?.token) {
+      setError(
+        "Please create an account or sign in before saving your onboarding details.",
+      );
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const response = await updateCurrentUserProfile(
+        {
+          preferredJobType: jobType,
+          expectedSalaryRange: salaryRange,
+          role,
+          qualification,
+        },
+        storedAuth.token,
+      );
+
+      updateStoredUser(response.user);
+      setSuccessMessage("You’re all set! Your preferences have been saved.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save your onboarding details.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#f2f2f2] px-6 py-6 font-sans text-[#11121c] md:px-10">
@@ -64,7 +118,10 @@ export default function EmployeeOnboardingForm() {
           <div className="absolute -left-12 -top-10 hidden h-[520px] w-[430px] rotate-[13deg] rounded-[18px] bg-black/5 lg:block" />
           <div className="absolute -bottom-10 right-2 hidden h-[560px] w-[430px] rotate-[10deg] rounded-[18px] bg-black/5 lg:block" />
 
-          <form className="relative rounded-[18px] bg-white px-8 py-10 font-sans shadow-[0_4px_6px_rgba(0,0,0,0.18)] md:px-10 md:py-12">
+          <form
+            onSubmit={handleSubmit}
+            className="relative rounded-[18px] bg-white px-8 py-10 font-sans shadow-[0_4px_6px_rgba(0,0,0,0.18)] md:px-10 md:py-12"
+          >
             <h1 className="text-2xl font-bold text-primary md:text-3xl">
               What role do you want to find?
             </h1>
@@ -72,6 +129,18 @@ export default function EmployeeOnboardingForm() {
               Tell us what kind of job you&apos;re targeting so we can tailor
               your search and recommendations.
             </p>
+
+            {error && (
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                {successMessage}
+              </div>
+            )}
 
             <div className="mt-9">
               <label className="text-sm font-semibold text-primary">
@@ -129,6 +198,7 @@ export default function EmployeeOnboardingForm() {
                 onChange={(event) => setRole(event.target.value)}
                 placeholder="e.g UI/UX designer"
                 className="mt-3 h-12 w-full rounded-[12px] border border-[#20212b] bg-white px-5 font-sans text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-400 focus:border-accent"
+                required
               />
             </div>
 
@@ -144,6 +214,7 @@ export default function EmployeeOnboardingForm() {
                 value={qualification}
                 onChange={(event) => setQualification(event.target.value)}
                 className="mt-3 h-12 w-full rounded-[12px] border border-[#20212b] bg-white px-5 font-sans text-sm text-gray-700 outline-none focus:border-accent"
+                required
               >
                 <option value="">e.g Diploma</option>
                 {qualifications.map((item) => (
@@ -161,12 +232,13 @@ export default function EmployeeOnboardingForm() {
               >
                 Back
               </Link>
-              <Link
-                href="/login"
-                className="flex h-10 min-w-[78px] items-center justify-center rounded-full bg-[#20212b] px-5 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#2c2d39]"
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex h-10 min-w-[78px] items-center justify-center rounded-full bg-[#20212b] px-5 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#2c2d39] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Next
-              </Link>
+                {isSaving ? "Saving..." : "Next"}
+              </button>
             </div>
           </form>
         </div>
