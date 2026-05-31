@@ -1,0 +1,6 @@
+{
+  "name": "Job Board",
+  "description": "An interactive job portal designed according to the layout, featuring category switching, candidate and employer paths, and responsive horizontal job scrolling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
