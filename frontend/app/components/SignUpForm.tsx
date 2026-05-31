@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function SignUpForm() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
@@ -19,6 +21,7 @@ export default function SignUpForm() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false)
+      router.push('/employee-onboarding')
     }, 1000)
   }
 
