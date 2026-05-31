@@ -1,0 +1,2 @@
+      0 [main] nohup (28696) child_copy: cygheap read copy failed, 0x800000000..0x80000BC60, done 0, windows pid 28696, Win32 error 299
+   3196 [main] nohup 1556 C:\Program Files\Git\usr\bin\nohup.exe: *** fatal error - couldn't create signal pipe, Win32 error 5
