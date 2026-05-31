@@ -1,6 +1,6 @@
 import { Job, Application } from "../types";
 
-const API_BASE = "/api";
+const API_BASE = "https://job-board-platform-msw6.onrender.com/api";
 
 export async function fetchWithTimeout(resource: string, options: RequestInit = {}) {
   const { timeout = 8000 } = options as any;
