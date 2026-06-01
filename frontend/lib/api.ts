@@ -128,6 +128,5 @@ export function getCurrentUser(token: string) {
 }
 
 export function getGoogleAuthUrl(userType: UserType) {
-  void userType;
-  return `${API_BASE_URL}/auth/google`;
+  return `${API_BASE_URL}/auth/google/start?mode=${userType}`;
 }
