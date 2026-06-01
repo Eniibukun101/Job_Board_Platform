@@ -5,7 +5,13 @@
  * Role: Backend Team - Applications Controller
  */
 
-const { Application, Job, User } = require('../models');
+const {
+  Application,
+  Job,
+  User,
+  Notification,
+  Interview,
+} = require("../models");
 
 // @desc    Apply for a job
 // @route   POST /api/applications/:jobId
@@ -17,28 +23,73 @@ const applyForJob = async (req, res) => {
 
     // Check job exists and is active
     const job = await Job.findByPk(jobId);
-    if (!job) return res.status(404).json({ message: 'Job not found.' });
-    if (!job.isActive) return res.status(400).json({ message: 'This job listing is no longer active.' });
+    if (!job) return res.status(404).json({ message: "Job not found." });
+    if (!job.isActive)
+      return res
+        .status(400)
+        .json({ message: "This job listing is no longer active." });
 
     // Prevent duplicate applications
     const existing = await Application.findOne({
-      where: { jobId, applicantId: req.user.id }
+      where: { jobId, applicantId: req.user.id },
     });
     if (existing) {
-      return res.status(409).json({ message: 'You have already applied for this job.' });
+      return res
+        .status(409)
+        .json({ message: "You have already applied for this job." });
     }
 
     const application = await Application.create({
       jobId,
       applicantId: req.user.id,
       coverLetter: coverLetter || null,
-      resumeUrl: resumeUrl || null
+      resumeUrl: resumeUrl || null,
     });
 
-    res.status(201).json({ message: 'Application submitted successfully.', application });
+    await Notification.create({
+      userId: req.user.id,
+      company: job.company,
+      message: `Application submitted for ${job.title}`,
+      logoType:
+        job.company.toLowerCase().includes("google") ||
+        job.company.toLowerCase().includes("vercel")
+          ? "x"
+          : job.company.toLowerCase().includes("supabase")
+            ? "car"
+            : "spotify",
+    });
+
+    await Notification.create({
+      userId: job.postedBy,
+      company: job.company,
+      message: `New application received for ${job.title} from ${req.user.name}`,
+      logoType: "spotify",
+    });
+
+    const populatedApplication = await Application.findByPk(application.id, {
+      include: [
+        {
+          model: Job,
+          as: "job",
+          attributes: ["id", "title", "company", "location", "jobType"],
+        },
+        {
+          model: User,
+          as: "applicant",
+          attributes: ["id", "name", "email", "phone", "bio"],
+        },
+      ],
+    });
+
+    res
+      .status(201)
+      .json({
+        message: "Application submitted successfully.",
+        application: populatedApplication,
+      });
   } catch (error) {
-    console.error('Apply error:', error);
-    res.status(500).json({ message: 'Server error submitting application.' });
+    console.error("Apply error:", error);
+    res.status(500).json({ message: "Server error submitting application." });
   }
 };
 
@@ -49,18 +100,20 @@ const getMyApplications = async (req, res) => {
   try {
     const applications = await Application.findAll({
       where: { applicantId: req.user.id },
-      include: [{
-        model: Job,
-        as: 'job',
-        attributes: ['id', 'title', 'company', 'location', 'jobType']
-      }],
-      order: [['createdAt', 'DESC']]
+      include: [
+        {
+          model: Job,
+          as: "job",
+          attributes: ["id", "title", "company", "location", "jobType"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({ applications });
   } catch (error) {
-    console.error('Get my applications error:', error);
-    res.status(500).json({ message: 'Server error fetching applications.' });
+    console.error("Get my applications error:", error);
+    res.status(500).json({ message: "Server error fetching applications." });
   }
 };
 
@@ -72,25 +125,31 @@ const getJobApplications = async (req, res) => {
     const { jobId } = req.params;
 
     const job = await Job.findByPk(jobId);
-    if (!job) return res.status(404).json({ message: 'Job not found.' });
+    if (!job) return res.status(404).json({ message: "Job not found." });
     if (job.postedBy !== req.user.id) {
-      return res.status(403).json({ message: 'You can only view applications for your own job listings.' });
+      return res
+        .status(403)
+        .json({
+          message: "You can only view applications for your own job listings.",
+        });
     }
 
     const applications = await Application.findAll({
       where: { jobId },
-      include: [{
-        model: User,
-        as: 'applicant',
-        attributes: ['id', 'name', 'email', 'phone', 'bio']
-      }],
-      order: [['createdAt', 'DESC']]
+      include: [
+        {
+          model: User,
+          as: "applicant",
+          attributes: ["id", "name", "email", "phone", "bio"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({ applications, total: applications.length });
   } catch (error) {
-    console.error('Get job applications error:', error);
-    res.status(500).json({ message: 'Server error fetching applications.' });
+    console.error("Get job applications error:", error);
+    res.status(500).json({ message: "Server error fetching applications." });
   }
 };
 
@@ -100,28 +159,101 @@ const getJobApplications = async (req, res) => {
 const updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const validStatuses = ['Pending', 'Reviewed', 'Shortlisted', 'Rejected', 'Hired'];
+    const validStatuses = [
+      "Pending",
+      "Reviewed",
+      "Shortlisted",
+      "Rejected",
+      "Hired",
+    ];
 
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: `Status must be one of: ${validStatuses.join(', ')}` });
+      return res
+        .status(400)
+        .json({
+          message: `Status must be one of: ${validStatuses.join(", ")}`,
+        });
     }
 
     const application = await Application.findByPk(req.params.id, {
-      include: [{ model: Job, as: 'job' }]
+      include: [{ model: Job, as: "job" }],
     });
 
-    if (!application) return res.status(404).json({ message: 'Application not found.' });
+    if (!application)
+      return res.status(404).json({ message: "Application not found." });
     if (application.job.postedBy !== req.user.id) {
-      return res.status(403).json({ message: 'You can only update applications for your own job listings.' });
+      return res
+        .status(403)
+        .json({
+          message:
+            "You can only update applications for your own job listings.",
+        });
     }
 
     application.status = status;
     await application.save();
 
-    res.json({ message: 'Application status updated.', application });
+    const logoType =
+      application.job.company.toLowerCase().includes("google") ||
+      application.job.company.toLowerCase().includes("vercel")
+        ? "x"
+        : application.job.company.toLowerCase().includes("supabase")
+          ? "car"
+          : "spotify";
+
+    await Notification.create({
+      userId: application.applicantId,
+      company: application.job.company,
+      message: `Your application for ${application.job.title} is now ${status}`,
+      logoType,
+    });
+
+    if (status === "Shortlisted") {
+      const existingInterview = await Interview.findOne({
+        where: {
+          applicationId: application.id,
+          userId: application.applicantId,
+        },
+      });
+
+      if (!existingInterview) {
+        await Interview.create({
+          userId: application.applicantId,
+          applicationId: application.id,
+          company: application.job.company,
+          title: `${application.job.title} Interview`,
+          description: `Interview scheduled for ${application.job.title}`,
+          date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10),
+          time: "10:00 AM",
+          completed: false,
+        });
+      }
+    }
+
+    const populatedApplication = await Application.findByPk(application.id, {
+      include: [
+        {
+          model: Job,
+          as: "job",
+          attributes: ["id", "title", "company", "location", "jobType"],
+        },
+        {
+          model: User,
+          as: "applicant",
+          attributes: ["id", "name", "email", "phone", "bio"],
+        },
+      ],
+    });
+
+    res.json({
+      message: "Application status updated.",
+      application: populatedApplication,
+    });
   } catch (error) {
-    console.error('Update application status error:', error);
-    res.status(500).json({ message: 'Server error updating status.' });
+    console.error("Update application status error:", error);
+    res.status(500).json({ message: "Server error updating status." });
   }
 };
 
@@ -132,17 +264,20 @@ const withdrawApplication = async (req, res) => {
   try {
     const application = await Application.findByPk(req.params.id);
 
-    if (!application) return res.status(404).json({ message: 'Application not found.' });
+    if (!application)
+      return res.status(404).json({ message: "Application not found." });
     if (application.applicantId !== req.user.id) {
-      return res.status(403).json({ message: 'You can only withdraw your own applications.' });
+      return res
+        .status(403)
+        .json({ message: "You can only withdraw your own applications." });
     }
 
     await application.destroy();
 
-    res.json({ message: 'Application withdrawn successfully.' });
+    res.json({ message: "Application withdrawn successfully." });
   } catch (error) {
-    console.error('Withdraw application error:', error);
-    res.status(500).json({ message: 'Server error withdrawing application.' });
+    console.error("Withdraw application error:", error);
+    res.status(500).json({ message: "Server error withdrawing application." });
   }
 };
 
@@ -151,5 +286,5 @@ module.exports = {
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,
-  withdrawApplication
+  withdrawApplication,
 };

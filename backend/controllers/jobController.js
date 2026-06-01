@@ -5,8 +5,8 @@
  * Role: Backend Team - Jobs Controller
  */
 
-const { Op } = require('sequelize');
-const { Job, User } = require('../models');
+const { Op } = require("sequelize");
+const { Job, User, Application } = require("../models");
 
 // @desc    Get all active jobs (with optional search & filters)
 // @route   GET /api/jobs
@@ -20,7 +20,7 @@ const getJobs = async (req, res) => {
       experience,
       salaryMin,
       page = 1,
-      limit = 10
+      limit = 10,
     } = req.query;
 
     const where = { isActive: true };
@@ -29,7 +29,7 @@ const getJobs = async (req, res) => {
       where[Op.or] = [
         { title: { [Op.like]: `%${search}%` } },
         { company: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } }
+        { description: { [Op.like]: `%${search}%` } },
       ];
     }
 
@@ -42,10 +42,17 @@ const getJobs = async (req, res) => {
 
     const { count, rows: jobs } = await Job.findAndCountAll({
       where,
-      include: [{ model: User, as: 'employer', attributes: ['id', 'name', 'company'] }],
-      order: [['createdAt', 'DESC']],
+      include: [
+        { model: User, as: "employer", attributes: ["id", "name", "company"] },
+        {
+          model: Application,
+          as: "applications",
+          attributes: ["id", "status"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
       limit: parseInt(limit),
-      offset
+      offset,
     });
 
     res.json({
@@ -54,12 +61,12 @@ const getJobs = async (req, res) => {
         total: count,
         page: parseInt(page),
         pages: Math.ceil(count / parseInt(limit)),
-        limit: parseInt(limit)
-      }
+        limit: parseInt(limit),
+      },
     });
   } catch (error) {
-    console.error('Get jobs error:', error);
-    res.status(500).json({ message: 'Server error fetching jobs.' });
+    console.error("Get jobs error:", error);
+    res.status(500).json({ message: "Server error fetching jobs." });
   }
 };
 
@@ -69,17 +76,28 @@ const getJobs = async (req, res) => {
 const getJobById = async (req, res) => {
   try {
     const job = await Job.findByPk(req.params.id, {
-      include: [{ model: User, as: 'employer', attributes: ['id', 'name', 'company', 'email'] }]
+      include: [
+        {
+          model: User,
+          as: "employer",
+          attributes: ["id", "name", "company", "email"],
+        },
+        {
+          model: Application,
+          as: "applications",
+          attributes: ["id", "status"],
+        },
+      ],
     });
 
     if (!job) {
-      return res.status(404).json({ message: 'Job not found.' });
+      return res.status(404).json({ message: "Job not found." });
     }
 
     res.json({ job });
   } catch (error) {
-    console.error('Get job error:', error);
-    res.status(500).json({ message: 'Server error fetching job.' });
+    console.error("Get job error:", error);
+    res.status(500).json({ message: "Server error fetching job." });
   }
 };
 
@@ -89,31 +107,42 @@ const getJobById = async (req, res) => {
 const createJob = async (req, res) => {
   try {
     const {
-      title, description, company, location,
-      salaryMin, salaryMax, jobType, experience, skills
+      title,
+      description,
+      company,
+      category,
+      location,
+      salaryMin,
+      salaryMax,
+      jobType,
+      experience,
+      skills,
     } = req.body;
 
     if (!title || !description || !company || !location) {
-      return res.status(400).json({ message: 'Title, description, company, and location are required.' });
+      return res.status(400).json({
+        message: "Title, description, company, and location are required.",
+      });
     }
 
     const job = await Job.create({
       title,
       description,
       company,
+      category: category || "developer-software",
       location,
       salaryMin: salaryMin || null,
       salaryMax: salaryMax || null,
-      jobType: jobType || 'Full-time',
-      experience: experience || 'Mid',
+      jobType: jobType || "Full-time",
+      experience: experience || "Mid",
       skills: skills || [],
-      postedBy: req.user.id
+      postedBy: req.user.id,
     });
 
-    res.status(201).json({ message: 'Job posted successfully.', job });
+    res.status(201).json({ message: "Job posted successfully.", job });
   } catch (error) {
-    console.error('Create job error:', error);
-    res.status(500).json({ message: 'Server error creating job.' });
+    console.error("Create job error:", error);
+    res.status(500).json({ message: "Server error creating job." });
   }
 };
 
@@ -125,24 +154,38 @@ const updateJob = async (req, res) => {
     const job = await Job.findByPk(req.params.id);
 
     if (!job) {
-      return res.status(404).json({ message: 'Job not found.' });
+      return res.status(404).json({ message: "Job not found." });
     }
 
     if (job.postedBy !== req.user.id) {
-      return res.status(403).json({ message: 'You can only edit your own job listings.' });
+      return res
+        .status(403)
+        .json({ message: "You can only edit your own job listings." });
     }
 
-    const fields = ['title', 'description', 'company', 'location', 'salaryMin', 'salaryMax', 'jobType', 'experience', 'skills', 'isActive'];
-    fields.forEach(field => {
+    const fields = [
+      "title",
+      "description",
+      "company",
+      "category",
+      "location",
+      "salaryMin",
+      "salaryMax",
+      "jobType",
+      "experience",
+      "skills",
+      "isActive",
+    ];
+    fields.forEach((field) => {
       if (req.body[field] !== undefined) job[field] = req.body[field];
     });
 
     await job.save();
 
-    res.json({ message: 'Job updated successfully.', job });
+    res.json({ message: "Job updated successfully.", job });
   } catch (error) {
-    console.error('Update job error:', error);
-    res.status(500).json({ message: 'Server error updating job.' });
+    console.error("Update job error:", error);
+    res.status(500).json({ message: "Server error updating job." });
   }
 };
 
@@ -154,19 +197,21 @@ const deleteJob = async (req, res) => {
     const job = await Job.findByPk(req.params.id);
 
     if (!job) {
-      return res.status(404).json({ message: 'Job not found.' });
+      return res.status(404).json({ message: "Job not found." });
     }
 
     if (job.postedBy !== req.user.id) {
-      return res.status(403).json({ message: 'You can only delete your own job listings.' });
+      return res
+        .status(403)
+        .json({ message: "You can only delete your own job listings." });
     }
 
     await job.destroy();
 
-    res.json({ message: 'Job deleted successfully.' });
+    res.json({ message: "Job deleted successfully." });
   } catch (error) {
-    console.error('Delete job error:', error);
-    res.status(500).json({ message: 'Server error deleting job.' });
+    console.error("Delete job error:", error);
+    res.status(500).json({ message: "Server error deleting job." });
   }
 };
 
@@ -177,14 +222,103 @@ const getMyListings = async (req, res) => {
   try {
     const jobs = await Job.findAll({
       where: { postedBy: req.user.id },
-      order: [['createdAt', 'DESC']]
+      include: [
+        {
+          model: Application,
+          as: "applications",
+          attributes: ["id", "status"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({ jobs });
   } catch (error) {
-    console.error('Get my listings error:', error);
-    res.status(500).json({ message: 'Server error fetching your listings.' });
+    console.error("Get my listings error:", error);
+    res.status(500).json({ message: "Server error fetching your listings." });
   }
 };
 
-module.exports = { getJobs, getJobById, createJob, updateJob, deleteJob, getMyListings };
+const getSavedJobs = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    const savedJobIds = user.savedJobIds || [];
+
+    if (savedJobIds.length === 0) {
+      return res.json({ jobs: [] });
+    }
+
+    const jobs = await Job.findAll({
+      where: { id: savedJobIds, isActive: true },
+      include: [
+        {
+          model: Application,
+          as: "applications",
+          attributes: ["id", "status"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.json({ jobs });
+  } catch (error) {
+    console.error("Get saved jobs error:", error);
+    res.status(500).json({ message: "Server error fetching saved jobs." });
+  }
+};
+
+const saveJob = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    const job = await Job.findByPk(req.params.id);
+
+    if (!job || !job.isActive) {
+      return res.status(404).json({ message: "Job not found." });
+    }
+
+    const savedJobIds = user.savedJobIds || [];
+    const jobId = Number(req.params.id);
+    if (!savedJobIds.includes(jobId)) {
+      user.savedJobIds = [...savedJobIds, jobId];
+      await user.save();
+    }
+
+    res.json({
+      message: "Job saved successfully.",
+      savedJobIds: user.savedJobIds,
+    });
+  } catch (error) {
+    console.error("Save job error:", error);
+    res.status(500).json({ message: "Server error saving job." });
+  }
+};
+
+const unsaveJob = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    user.savedJobIds = (user.savedJobIds || []).filter(
+      (jobId) => jobId !== Number(req.params.id),
+    );
+    await user.save();
+
+    res.json({
+      message: "Job removed from saved list.",
+      savedJobIds: user.savedJobIds,
+    });
+  } catch (error) {
+    console.error("Unsave job error:", error);
+    res.status(500).json({ message: "Server error removing saved job." });
+  }
+};
+
+module.exports = {
+  getJobs,
+  getJobById,
+  createJob,
+  updateJob,
+  deleteJob,
+  getMyListings,
+  getSavedJobs,
+  saveJob,
+  unsaveJob,
+};

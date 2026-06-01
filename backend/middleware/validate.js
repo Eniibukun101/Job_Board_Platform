@@ -85,6 +85,13 @@ const validateUpdateProfile = [
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
 
+  body("email")
+    .optional()
+    .trim()
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+
   body("phone")
     .optional()
     .matches(/^[+\d\s\-()]{7,20}$/)
@@ -142,6 +149,35 @@ const validateUpdateProfile = [
     .withMessage(
       "Preferred job type must be Full time, Part-time, Contract, or Internship",
     ),
+
+  body("photoUrl")
+    .optional({ values: "falsy" })
+    .isString()
+    .withMessage("Photo must be a valid string value"),
+
+  body("resumeUrl")
+    .optional({ values: "falsy" })
+    .isString()
+    .withMessage("Resume must be a valid string value"),
+
+  body("linkedin")
+    .optional({ values: "falsy" })
+    .isString()
+    .isLength({ max: 255 })
+    .withMessage("LinkedIn link must be 255 characters or fewer"),
+
+  body("portfolio")
+    .optional({ values: "falsy" })
+    .isString()
+    .isLength({ max: 255 })
+    .withMessage("Portfolio link must be 255 characters or fewer"),
+
+  body("skills").optional().isArray().withMessage("Skills must be an array"),
+
+  body("experiences")
+    .optional()
+    .isArray()
+    .withMessage("Experiences must be an array"),
 
   handleValidationErrors,
 ];
@@ -245,9 +281,9 @@ const validateApplication = [
     .withMessage("Cover letter cannot exceed 1000 characters"),
 
   body("resumeUrl")
-    .optional()
-    .isURL()
-    .withMessage("Resume URL must be a valid URL"),
+    .optional({ values: "falsy" })
+    .isString()
+    .withMessage("Resume value must be a string"),
 
   handleValidationErrors,
 ];

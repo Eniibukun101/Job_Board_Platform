@@ -36,6 +36,13 @@ const serializeUser = (user) => ({
   qualification: user.qualification,
   expectedSalaryRange: user.expectedSalaryRange,
   preferredJobType: user.preferredJobType,
+  photoUrl: user.photoUrl,
+  resumeUrl: user.resumeUrl,
+  linkedin: user.linkedin,
+  portfolio: user.portfolio,
+  skills: user.skills,
+  experiences: user.experiences,
+  savedJobIds: user.savedJobIds,
 });
 
 const isGoogleConfigured = () => {
@@ -315,6 +322,7 @@ const updateMe = async (req, res) => {
   try {
     const {
       name,
+      email,
       phone,
       bio,
       company,
@@ -325,9 +333,26 @@ const updateMe = async (req, res) => {
       qualification,
       expectedSalaryRange,
       preferredJobType,
+      photoUrl,
+      resumeUrl,
+      linkedin,
+      portfolio,
+      skills,
+      experiences,
     } = req.body;
 
     const user = await User.findByPk(req.user.id);
+
+    if (email !== undefined && email !== user.email) {
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser && existingUser.id !== user.id) {
+        return res.status(409).json({
+          message: "An account with this email already exists.",
+        });
+      }
+      user.email = email;
+    }
+
     if (name !== undefined) user.name = name;
     if (phone !== undefined) user.phone = phone;
     if (bio !== undefined) user.bio = bio;
@@ -341,6 +366,12 @@ const updateMe = async (req, res) => {
       user.expectedSalaryRange = expectedSalaryRange;
     if (preferredJobType !== undefined)
       user.preferredJobType = preferredJobType;
+    if (photoUrl !== undefined) user.photoUrl = photoUrl;
+    if (resumeUrl !== undefined) user.resumeUrl = resumeUrl;
+    if (linkedin !== undefined) user.linkedin = linkedin;
+    if (portfolio !== undefined) user.portfolio = portfolio;
+    if (skills !== undefined) user.skills = skills;
+    if (experiences !== undefined) user.experiences = experiences;
 
     await user.save();
 

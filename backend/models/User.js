@@ -27,6 +27,46 @@ const User = sequelize.define(
     qualification: { type: DataTypes.STRING, allowNull: true },
     expectedSalaryRange: { type: DataTypes.STRING, allowNull: true },
     preferredJobType: { type: DataTypes.STRING, allowNull: true },
+    photoUrl: { type: DataTypes.TEXT, allowNull: true },
+    resumeUrl: { type: DataTypes.TEXT, allowNull: true },
+    linkedin: { type: DataTypes.STRING, allowNull: true },
+    portfolio: { type: DataTypes.STRING, allowNull: true },
+    skills: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: "[]",
+      get() {
+        const value = this.getDataValue("skills");
+        return value ? JSON.parse(value) : [];
+      },
+      set(value) {
+        this.setDataValue("skills", JSON.stringify(value || []));
+      },
+    },
+    experiences: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: "[]",
+      get() {
+        const value = this.getDataValue("experiences");
+        return value ? JSON.parse(value) : [];
+      },
+      set(value) {
+        this.setDataValue("experiences", JSON.stringify(value || []));
+      },
+    },
+    savedJobIds: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: "[]",
+      get() {
+        const value = this.getDataValue("savedJobIds");
+        return value ? JSON.parse(value) : [];
+      },
+      set(value) {
+        this.setDataValue("savedJobIds", JSON.stringify(value || []));
+      },
+    },
   },
   { timestamps: true },
 );
