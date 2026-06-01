@@ -204,7 +204,7 @@ export default function Header({
               Sign in
             </button>
             <button
-              onClick={() => window.location.assign("/signup")}
+              onClick={() => window.location.assign("/get-started")}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-[#21222D] text-white transition-all border-0 cursor-pointer"
             >
               Get started

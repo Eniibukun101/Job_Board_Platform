@@ -170,6 +170,15 @@ export default function EmployerLoginForm() {
             />
           </div>
 
+          <div className="flex justify-end mb-4">
+            <Link
+              href="/auth/forgot-password"
+              className="text-[11px] text-accent hover:underline font-medium"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <div className="flex justify-center pt-2">
             <button
               type="submit"
@@ -202,7 +211,7 @@ export default function EmployerLoginForm() {
           Continue with Google
         </button>
 
-        <p className="mt-8 text-center text-[11px] font-semibold text-gray-300">
+        <p className="mt-8 text-center text-[11px] font-semibold text-gray-500">
           Don&apos;t have an account?{" "}
           <Link href="/company-signup" className="text-accent hover:underline">
             Sign up

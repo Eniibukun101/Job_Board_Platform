@@ -48,10 +48,10 @@ export default function SignUpForm() {
 
   return (
     <>
-      <h2 className="text-2xl md:text-3xl font-bold text-primary mb-2">
+      <h2 className="mb-2 text-2xl font-bold text-primary md:text-3xl">
         Create Account
       </h2>
-      <p className="text-gray-600 text-sm mb-8">
+      <p className="mb-8 text-sm text-gray-600">
         Be part of a professional network designed to make job searching simple,
         modern, and accessible.
       </p>
@@ -80,7 +80,7 @@ export default function SignUpForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email address"
-              className="w-full pl-12 pr-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-400 bg-white py-3 pl-12 pr-4 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none"
               required
             />
           </div>
@@ -106,7 +106,7 @@ export default function SignUpForm() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full Name"
-              className="w-full pl-12 pr-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-400 bg-white py-3 pl-12 pr-4 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none"
               required
             />
           </div>
@@ -168,7 +168,7 @@ export default function SignUpForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full pl-12 pr-12 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-400 bg-white py-3 pl-12 pr-12 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none"
               required
             />
           </div>
@@ -181,15 +181,17 @@ export default function SignUpForm() {
           {isLoading ? "Creating account..." : "Sign up"}
         </button>
       </form>
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="text-gray-500 text-sm">or sign in with</span>
-        <div className="flex-1 h-px bg-gray-200"></div>
+      <div className="my-6 flex items-center gap-4">
+        <div className="h-px flex-1 bg-gray-200"></div>
+        <span className="text-sm text-gray-500">
+          or sign in with
+        </span>
+        <div className="h-px flex-1 bg-gray-200"></div>
       </div>
       <button
         type="button"
         onClick={handleGoogleSignUp}
-        className="w-full flex items-center justify-center gap-3 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold py-3 rounded-lg transition-colors shadow"
+        className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-gray-200 py-3 font-semibold text-gray-700 shadow transition-colors hover:border-gray-300"
       >
         <img
           src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
@@ -198,10 +200,10 @@ export default function SignUpForm() {
         />
         Continue with Google
       </button>
-      <p className="text-center text-gray-600 text-sm mt-8">
+      <p className="mt-8 text-center text-sm text-gray-600">
         Already have an account?{" "}
         <Link
-          href="/login"
+          href="/login/employee"
           className="text-accent hover:underline font-semibold"
         >
           Sign in
