@@ -33,7 +33,7 @@ export default function CompanySignUpPage() {
           <div className="w-full lg:pl-6">
             <div className="mb-6 flex justify-center lg:justify-start">
               <Image
-                src="/logo.jpeg"
+                src="/logo-removebg-preview.png"
                 alt="Jobnest Logo"
                 width={80}
                 height={80}

@@ -13,13 +13,13 @@ export default function Home() {
       <div className="flex gap-4">
         <button
           onClick={() => router.push("/login")}
-          className="rounded-full border-2 border-[#11121c] bg-[#11121c] px-8 py-3 font-bold text-white transition-all duration-200 hover:bg-transparent hover:text-[#11121c] active:scale-95 dark:border-white dark:bg-white dark:text-[#11121c] dark:hover:bg-transparent dark:hover:text-white"
+          className="rounded-full border-2 border-[#11121c] bg-transparent px-8 py-3 font-bold text-[#11121c] transition-all duration-200 hover:bg-[#11121c] hover:text-white active:scale-95 dark:border-white dark:bg-transparent dark:text-white dark:hover:bg-white dark:hover:text-[#11121c]"
         >
           Sign in
         </button>
         <button
           onClick={() => router.push("/get-started")}
-          className="rounded-full border-2 border-[#11121c] bg-transparent px-8 py-3 font-bold text-[#11121c] transition-all duration-200 hover:bg-[#11121c] hover:text-white active:scale-95 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-[#11121c]"
+          className="rounded-full border-2 border-[#11121c] bg-transparent px-8 py-3 font-bold text-[#11121c] transition-all duration-200 hover:bg-[#11121c] hover:text-white active:scale-95 dark:border-white dark:bg-transparent dark:text-white dark:hover:bg-white dark:hover:text-[#11121c]"
         >
           Get started
         </button>

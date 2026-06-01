@@ -6,7 +6,7 @@ export default function WelcomeSection() {
       {/* Logo */}
       <div className="absolute top-8 left-8">
         <Image
-          src="/logo.jpeg"
+          src="/logo-removebg-preview.png"
           alt="Jobnest Logo"
           width={140}
           height={140}

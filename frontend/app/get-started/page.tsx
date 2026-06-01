@@ -9,19 +9,6 @@ export default function GetStartedSelectionPage() {
       <div className="pointer-events-none absolute bottom-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-cyan-500/10 blur-[120px]" />
 
       <div className="z-10 flex w-full max-w-4xl flex-col items-center">
-        <div className="mb-10 flex flex-col items-center gap-4">
-          <Link href="/" className="transition-transform hover:scale-105">
-            <Image
-              src="/logo.jpeg"
-              alt="Jobnest"
-              width={160}
-              height={50}
-              priority
-              className="h-12 w-auto rounded-xl object-contain shadow-lg ring-1 ring-black/10 dark:ring-white/10"
-            />
-          </Link>
-        </div>
-
         <div className="mb-12 text-center">
           <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-[#11121c] dark:text-white sm:text-4xl">
             Get started with JobNest
