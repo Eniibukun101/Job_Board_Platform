@@ -89,7 +89,7 @@ export default function Header({
           id="logo-home-trigger"
         >
           <Image
-            src="/logo.jpeg"
+            src="/logo-removebg-preview.png"
             alt="Jobnest"
             width={158}
             height={48}

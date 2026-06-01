@@ -36,7 +36,7 @@ export default function LoginForm({
       {/* Mobile logo */}
       <div className="md:hidden mb-8 flex justify-center">
         <Image
-          src="/logo.jpeg"
+          src="/logo-removebg-preview.png"
           alt="Jobnest Logo"
           width={56}
           height={56}
