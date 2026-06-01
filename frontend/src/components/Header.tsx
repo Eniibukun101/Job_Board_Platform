@@ -36,6 +36,7 @@ interface HeaderProps {
   profileRole?: string;
   isPhotoUploaded?: boolean;
   photoUrl?: string;
+  userType?: "Applicant" | "Employer";
 }
 
 export default function Header({
@@ -47,6 +48,7 @@ export default function Header({
   profileRole = "",
   isPhotoUploaded = false,
   photoUrl = "",
+  userType = "Applicant",
 }: HeaderProps = {}) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] =
@@ -214,49 +216,54 @@ export default function Header({
 
         {/* Right Side: Navigation Icons (Direct routing to dashboards) */}
         <div className="flex items-center justify-end gap-1.5 select-none font-sans">
-          {/* Dynamic Employer Desk Access */}
-          <button
-            onClick={() => {
-              if (onNavigate) {
-                onNavigate("employer");
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-              currentView === "employer"
-                ? "bg-[#21222D] text-white font-bold"
-                : "text-gray-500 hover:text-[#21222D] hover:bg-gray-100"
-            }`}
-            title="Enterprise Employer Desk"
-            id="header-nav-reactive-employer"
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span className="text-[10px] uppercase font-mono font-black tracking-wider hidden sm:inline">
-              Employer Desk
-            </span>
-          </button>
+          {/* Dynamic Employer Desk Access - Only visible to Employers */}
+          {userType === "Employer" && (
+            <button
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate("employer");
+                }
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                currentView === "employer"
+                  ? "bg-[#21222D] text-white font-bold"
+                  : "text-gray-500 hover:text-[#21222D] hover:bg-gray-100"
+              }`}
+              title="Enterprise Employer Desk"
+              id="header-nav-reactive-employer"
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span className="text-[10px] uppercase font-mono font-black tracking-wider hidden sm:inline">
+                Employer Desk
+              </span>
+            </button>
+          )}
 
           {isLoggedIn && (
             <>
-              <button
-                onClick={() => {
-                  if (onNavigate) {
-                    onNavigate("dashboard");
-                  } else {
-                    alert("Demo Mode: Home shortcut clicked.");
-                  }
-                }}
-                className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-                  currentView === "dashboard"
-                    ? "bg-[#21222D]/10 text-[#21222D]"
-                    : "text-gray-500 hover:text-[#21222D] hover:bg-gray-100"
-                }`}
-                title="Dashboard Portal"
-                id="header-nav-reactive-home"
-              >
-                <Home
-                  className={`w-5 h-5 ${currentView === "dashboard" ? "text-[#21222D]" : "text-gray-500"}`}
-                />
-              </button>
+              {/* Home icon only for Applicants, not for Employers */}
+              {userType === "Applicant" && (
+                <button
+                  onClick={() => {
+                    if (onNavigate) {
+                      onNavigate("dashboard");
+                    } else {
+                      alert("Demo Mode: Home shortcut clicked.");
+                    }
+                  }}
+                  className={`p-2.5 rounded-xl transition-all cursor-pointer ${
+                    currentView === "dashboard"
+                      ? "bg-[#21222D]/10 text-[#21222D]"
+                      : "text-gray-500 hover:text-[#21222D] hover:bg-gray-100"
+                  }`}
+                  title="Dashboard Portal"
+                  id="header-nav-reactive-home"
+                >
+                  <Home
+                    className={`w-5 h-5 ${currentView === "dashboard" ? "text-[#21222D]" : "text-gray-500"}`}
+                  />
+                </button>
+              )}
 
               <button
                 onClick={() => {
