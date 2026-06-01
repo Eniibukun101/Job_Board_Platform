@@ -1,142 +1,130 @@
-import { Job, Application } from "../types";
+export type UserType = "Applicant" | "Employer";
 
-const API_BASE = "/api";
-
-export async function fetchWithTimeout(resource: string, options: RequestInit = {}) {
-  const { timeout = 8000 } = options as any;
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(resource, {
-      ...options,
-      signal: controller.signal
-    });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
-  }
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  userType: UserType;
+  company?: string | null;
+  phone?: string | null;
+  bio?: string | null;
+  industry?: string | null;
+  website?: string | null;
+  location?: string | null;
+  role?: string | null;
+  qualification?: string | null;
+  expectedSalaryRange?: string | null;
+  preferredJobType?: string | null;
 }
 
-export const apiService = {
-  // --- Heatlh/Diagnostics API ---
-  async checkHealth() {
-    try {
-      const res = await fetchWithTimeout(`${API_BASE}/health`);
-      return await res.json();
-    } catch (e) {
-      console.warn("Diagnostics healthcheck offline:", e);
-      return null;
-    }
-  },
+export interface AuthResponse {
+  message: string;
+  token: string;
+  user: AuthUser;
+}
 
-  async getDiagnosticsStats() {
-    try {
-      const res = await fetchWithTimeout(`${API_BASE}/diagnostics/stats`);
-      return await res.json();
-    } catch (e) {
-      console.warn("Could not retrieve team metrics payload:", e);
-      return null;
-    }
-  },
+export interface ApiValidationError {
+  field: string;
+  message: string;
+}
 
-  async clearDiagnosticsLogs() {
-    try {
-      const res = await fetchWithTimeout(`${API_BASE}/diagnostics/clear-logs`, {
-        method: "POST"
-      });
-      return await res.json();
-    } catch (e) {
-      return null;
-    }
-  },
+export interface ApiErrorPayload {
+  message?: string;
+  errors?: ApiValidationError[];
+}
 
-  // --- Jobs API ---
-  async getJobs(filters: { category?: string; search?: string; type?: string; experienceLevel?: string } = {}): Promise<Job[]> {
-    try {
-      const params = new URLSearchParams();
-      if (filters.category) params.append("category", filters.category);
-      if (filters.search) params.append("search", filters.search);
-      if (filters.type) params.append("type", filters.type);
-      if (filters.experienceLevel) params.append("experienceLevel", filters.experienceLevel);
+const API_BASE_URL = "https://job-board-platform-msw6.onrender.com/api";
 
-      const res = await fetchWithTimeout(`${API_BASE}/jobs?${params.toString()}`);
-      if (!res.ok) throw new Error("Faulty response status from jobs query");
-      return await res.json();
-    } catch (e) {
-      console.error("API Error in getJobs, falling back to cached state:", e);
-      throw e;
-    }
-  },
-
-  async getJobDetail(id: string): Promise<Job> {
-    const res = await fetchWithTimeout(`${API_BASE}/jobs/${id}`);
-    if (!res.ok) throw new Error(`Faulty response code: ${res.status}`);
-    return await res.json();
-  },
-
-  async createJob(jobData: Partial<Job>): Promise<Job> {
-    const res = await fetchWithTimeout(`${API_BASE}/jobs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jobData)
-    });
-    if (!res.ok) throw new Error("Could not create job position on database");
-    return await res.json();
-  },
-
-  async updateJob(id: string, jobData: Partial<Job>): Promise<Job> {
-    const res = await fetchWithTimeout(`${API_BASE}/jobs/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jobData)
-    });
-    if (!res.ok) throw new Error("Could not update job details on database");
-    return await res.json();
-  },
-
-  async deleteJob(id: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetchWithTimeout(`${API_BASE}/jobs/${id}`, {
-      method: "DELETE"
-    });
-    if (!res.ok) throw new Error("Could not delete job vacancy on database");
-    return await res.json();
-  },
-
-  // --- Applications API ---
-  async applyToJob(appData: { jobId: string; candidateName: string; candidateEmail: string; resumeName: string }): Promise<Application> {
-    const res = await fetchWithTimeout(`${API_BASE}/applications`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(appData)
-    });
-    if (!res.ok) throw new Error("Refused candidate application registration");
-    return await res.json();
-  },
-
-  async getApplications(candidateEmail?: string): Promise<Application[]> {
-    try {
-      const url = candidateEmail 
-        ? `${API_BASE}/applications?candidateEmail=${encodeURIComponent(candidateEmail)}`
-        : `${API_BASE}/applications`;
-      const res = await fetchWithTimeout(url);
-      if (!res.ok) throw new Error("Could not fetch application list");
-      return await res.json();
-    } catch (e) {
-      console.error("API Error fetching applications:", e);
-      throw e;
-    }
-  },
-
-  async updateApplicationStatus(id: string, status: string): Promise<Application> {
-    const res = await fetchWithTimeout(`${API_BASE}/applications/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
-    if (!res.ok) throw new Error("Could not update candidate status on backend");
-    return await res.json();
+function buildErrorMessage(payload: ApiErrorPayload | null, fallback: string) {
+  if (!payload) return fallback;
+  if (payload.errors?.length) {
+    return payload.errors.map((error) => error.message).join(" ");
   }
-};
+  return payload.message || fallback;
+}
+
+async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  token?: string,
+): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json")
+    ? ((await response.json()) as T | ApiErrorPayload)
+    : null;
+
+  if (!response.ok) {
+    throw new Error(
+      buildErrorMessage(payload as ApiErrorPayload | null, "Request failed"),
+    );
+  }
+
+  return payload as T;
+}
+
+export function registerUser(data: {
+  name: string;
+  email: string;
+  password: string;
+  userType: UserType;
+  company?: string;
+}) {
+  return request<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function loginUser(data: { email: string; password: string }) {
+  return request<AuthResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateCurrentUserProfile(
+  data: Partial<
+    Pick<
+      AuthUser,
+      | "name"
+      | "company"
+      | "phone"
+      | "bio"
+      | "industry"
+      | "website"
+      | "location"
+      | "role"
+      | "qualification"
+      | "expectedSalaryRange"
+      | "preferredJobType"
+    >
+  >,
+  token: string,
+) {
+  return request<{ message: string; user: AuthUser }>(
+    "/auth/me",
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+    token,
+  );
+}
+
+export function getCurrentUser(token: string) {
+  return request<{ user: AuthUser }>("/auth/me", { method: "GET" }, token);
+}
+
+export function getGoogleAuthUrl(userType: UserType) {
+  return `${API_BASE_URL}/auth/google/start?mode=${userType}`;
+}
