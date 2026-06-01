@@ -1,14 +1,13 @@
-import { Category } from "../types";
 import { CATEGORIES } from "../data/jobData";
-import { 
-  Code, 
-  PenTool, 
-  Palette, 
-  TrendingUp, 
-  BarChart3, 
-  Users, 
-  Sliders, 
-  GraduationCap 
+import {
+  BarChart3,
+  Code,
+  GraduationCap,
+  Palette,
+  PenTool,
+  Sliders,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 
 interface CategoriesProps {
@@ -16,8 +15,8 @@ interface CategoriesProps {
   onSelectCategory: (id: string) => void;
 }
 
-// Icon helper to render correct lucide icon based on name
-const getIcon = (iconName: string, className: string) => {
+const getIcon = (iconName: string) => {
+  const className = "h-3.5 w-3.5";
   switch (iconName) {
     case "Code":
       return <Code className={className} />;
@@ -40,52 +39,40 @@ const getIcon = (iconName: string, className: string) => {
   }
 };
 
-export default function Categories({ selectedCategoryId, onSelectCategory }: CategoriesProps) {
+export default function Categories({
+  selectedCategoryId,
+  onSelectCategory,
+}: CategoriesProps) {
   return (
-    <section id="categories-section" className="py-16 px-6 bg-[#f4f5f7] border-b border-gray-150">
-      <div className="max-w-7xl mx-auto space-y-8 text-center">
-        
-        {/* Section Header */}
-        <div className="space-y-2">
-          <h2 className="text-2xl md:text-3.5xl font-black text-gray-900 tracking-tight font-sans">
-            Choose Your Category
-          </h2>
-          <p className="text-gray-500 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">
-            Pick from our curated list of professional fields and instantly refine your search listings.
-          </p>
-        </div>
+    <section id="categories-section" className="bg-[#f2f2f2] px-6 py-14">
+      <div className="mx-auto max-w-[850px] text-center">
+        <h2 className="text-4xl font-black tracking-[-0.02em] text-black">
+          Choose Your Category
+        </h2>
+        <p className="mt-5 text-xl font-light text-gray-500">
+          Pick from our range of jobs offer and filter your search to your field
+        </p>
 
-        {/* Categories Grid Container */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-          {CATEGORIES.map((cat) => {
-            const isActive = selectedCategoryId === cat.id;
+        <div className="mt-12 grid grid-cols-2 gap-5 md:grid-cols-4">
+          {CATEGORIES.slice(0, 8).map((category) => {
+            const isActive = selectedCategoryId === category.id;
             return (
               <button
-                key={cat.id}
-                onClick={() => onSelectCategory(cat.id)}
-                className={`py-3 px-4 rounded-xl text-left border text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-3 active:scale-98 ${
+                key={category.id}
+                type="button"
+                onClick={() => onSelectCategory(category.id)}
+                className={`flex h-10 items-center gap-3 rounded-[7px] px-4 text-left text-[11px] font-black transition-all ${
                   isActive
-                    ? "bg-[#21222D] border-[#21222D] text-white shadow-md scale-[1.02]"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-gray-350 hover:bg-gray-50/50"
+                    ? "bg-[#20212b] text-white"
+                    : "bg-white text-[#20212b] hover:-translate-y-0.5 hover:shadow-md"
                 }`}
-                id={`cat-pill-${cat.id}`}
               >
-                <div className={`p-1.5 rounded-lg flex items-center justify-center shrink-0 ${
-                  isActive ? "bg-indigo-600/30 text-indigo-400" : "bg-gray-100 text-gray-500"
-                }`}>
-                  {getIcon(cat.icon, "w-4 h-4")}
-                </div>
-                <div className="truncate">
-                  <p className="truncate leading-tight">{cat.name}</p>
-                  <p className={`text-[9px] font-medium mt-0.5 ${isActive ? "text-gray-400" : "text-gray-400"}`}>
-                    {cat.count} listings
-                  </p>
-                </div>
+                {getIcon(category.icon)}
+                <span className="truncate">{category.name}</span>
               </button>
             );
           })}
         </div>
-
       </div>
     </section>
   );
