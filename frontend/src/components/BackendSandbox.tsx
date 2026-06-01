@@ -1,29 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Terminal, 
-  Database, 
-  Code2, 
-  Activity, 
-  Minimize2, 
-  Maximize2, 
-  CheckCircle, 
-  Trash2, 
-  Sparkles, 
+import {
+  Terminal,
+  Database,
+  Code2,
+  Activity,
+  Minimize2,
+  Maximize2,
+  CheckCircle,
+  Trash2,
+  Sparkles,
   Layers,
-  FileCheck
+  FileCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { apiService } from "../lib/api";
 
 export default function BackendSandbox() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"logs" | "database" | "codes" | "branches">("logs");
-  
+  const [activeTab, setActiveTab] = useState<
+    "logs" | "database" | "codes" | "branches"
+  >("logs");
+
   // Real-time fetched diagnostic states from Express server
   const [logs, setLogs] = useState<any[]>([]);
   const [liveJobs, setLiveJobs] = useState<any[]>([]);
   const [isLive, setIsLive] = useState(false);
-  const [diagnosticsUrl, setDiagnosticsUrl] = useState<string>("/api/diagnostics/stats");
+  const [diagnosticsUrl, setDiagnosticsUrl] = useState<string>(
+    "/api/diagnostics/stats",
+  );
 
   // Fetch stats and logs from live server
   const fetchLogsAndStats = async () => {
@@ -63,24 +67,32 @@ export default function BackendSandbox() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={`shadow-2xl rounded-full px-5 py-3 flex items-center gap-2 cursor-pointer transition-colors border ${
-          isLive 
-            ? "bg-[#1e2030] text-emerald-400 border-emerald-500/30" 
+          isLive
+            ? "bg-[#1e2030] text-emerald-400 border-emerald-500/30"
             : "bg-slate-900 text-amber-400 border-amber-500/30"
         }`}
         id="backend-sandbox-launcher"
       >
         <span className="relative flex h-3 w-3 shrink-0">
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-            isLive ? "bg-emerald-400" : "bg-amber-400"
-          }`} />
-          <span className={`relative inline-flex rounded-full h-3 w-3 ${
-            isLive ? "bg-emerald-500" : "bg-amber-500"
-          }`} />
+          <span
+            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+              isLive ? "bg-emerald-400" : "bg-amber-400"
+            }`}
+          />
+          <span
+            className={`relative inline-flex rounded-full h-3 w-3 ${
+              isLive ? "bg-emerald-500" : "bg-amber-500"
+            }`}
+          />
         </span>
         <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
           Backend Integration Desk
         </span>
-        {isOpen ? <Minimize2 className="w-3.5 h-3.5 text-gray-400" /> : <Maximize2 className="w-3.5 h-3.5 text-gray-400" />}
+        {isOpen ? (
+          <Minimize2 className="w-3.5 h-3.5 text-gray-400" />
+        ) : (
+          <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
+        )}
       </motion.button>
 
       {/* Floating Dialog Drawer */}
@@ -109,7 +121,7 @@ export default function BackendSandbox() {
                   Developer API Sandbox Console
                 </h3>
               </div>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 px-2.5 bg-slate-800/50 hover:bg-slate-800 text-gray-400 hover:text-white text-xs font-bold rounded-lg border-0 cursor-pointer"
               >
@@ -122,8 +134,8 @@ export default function BackendSandbox() {
               <button
                 onClick={() => setActiveTab("logs")}
                 className={`py-2 px-3.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wider cursor-pointer border-0 transition-all flex items-center gap-1.5 shrink-0 ${
-                  activeTab === "logs" 
-                    ? "bg-[#1b1c2e] text-emerald-400 font-black shadow-xs" 
+                  activeTab === "logs"
+                    ? "bg-[#1b1c2e] text-emerald-400 font-black shadow-xs"
                     : "bg-transparent text-gray-400 hover:text-white"
                 }`}
               >
@@ -133,8 +145,8 @@ export default function BackendSandbox() {
               <button
                 onClick={() => setActiveTab("database")}
                 className={`py-2 px-3.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wider cursor-pointer border-0 transition-all flex items-center gap-1.5 shrink-0 ${
-                  activeTab === "database" 
-                    ? "bg-[#1b1c2e] text-indigo-400 font-black shadow-xs" 
+                  activeTab === "database"
+                    ? "bg-[#1b1c2e] text-indigo-400 font-black shadow-xs"
                     : "bg-transparent text-gray-400 hover:text-white"
                 }`}
               >
@@ -144,8 +156,8 @@ export default function BackendSandbox() {
               <button
                 onClick={() => setActiveTab("codes")}
                 className={`py-2 px-3.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wider cursor-pointer border-0 transition-all flex items-center gap-1.5 shrink-0 ${
-                  activeTab === "codes" 
-                    ? "bg-[#1b1c2e] text-sky-400 font-black shadow-xs" 
+                  activeTab === "codes"
+                    ? "bg-[#1b1c2e] text-sky-400 font-black shadow-xs"
                     : "bg-transparent text-gray-400 hover:text-white"
                 }`}
               >
@@ -155,8 +167,8 @@ export default function BackendSandbox() {
               <button
                 onClick={() => setActiveTab("branches")}
                 className={`py-2 px-3.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wider cursor-pointer border-0 transition-all flex items-center gap-1.5 shrink-0 ${
-                  activeTab === "branches" 
-                    ? "bg-[#1b1c2e] text-amber-400 font-black shadow-xs" 
+                  activeTab === "branches"
+                    ? "bg-[#1b1c2e] text-amber-400 font-black shadow-xs"
                     : "bg-transparent text-gray-400 hover:text-white"
                 }`}
               >
@@ -167,13 +179,13 @@ export default function BackendSandbox() {
 
             {/* Main Content Area */}
             <div className="flex-grow p-5 overflow-y-auto text-left bg-[#0e0f17]">
-              
               {/* TAB 1: HTTP logs */}
               {activeTab === "logs" && (
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] text-gray-500 font-mono">
-                      LISTENS TO INCOMING FRONTEND REQUESTS LOCALLY AND DYNAMICALLY
+                      LISTENS TO INCOMING FRONTEND REQUESTS LOCALLY AND
+                      DYNAMICALLY
                     </span>
                     {logs.length > 0 && (
                       <button
@@ -189,33 +201,56 @@ export default function BackendSandbox() {
                   {logs.length === 0 ? (
                     <div className="py-12 text-center text-slate-500 font-mono space-y-1.5 border border-dashed border-slate-800 rounded-2xl">
                       <Terminal className="w-8 h-8 text-slate-700 mx-auto" />
-                      <p className="text-xs font-semibold">No transactions recorded yet in this lifecycle.</p>
-                      <p className="text-[10px] text-slate-600">Interact with search features, post positions, or apply to populate entries.</p>
+                      <p className="text-xs font-semibold">
+                        No transactions recorded yet in this lifecycle.
+                      </p>
+                      <p className="text-[10px] text-slate-600">
+                        Interact with search features, post positions, or apply
+                        to populate entries.
+                      </p>
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-800/70 border border-slate-800/80 rounded-2xl overflow-hidden bg-[#11121d] font-mono text-[11px]">
                       {logs.map((log, i) => {
                         const isGet = log.method === "GET";
-                        const isPost = log.method === "POST" || log.method === "PUT" || log.method === "PATCH";
+                        const isPost =
+                          log.method === "POST" ||
+                          log.method === "PUT" ||
+                          log.method === "PATCH";
                         return (
-                          <div key={i} className="p-3.5 hover:bg-slate-800/30 transition-all flex items-start gap-3">
-                            <span className="text-gray-600 shrink-0 text-[10px] mt-0.5">{log.timestamp}</span>
-                            <span className={`px-2 py-0.5 rounded-md font-extrabold text-[10px] shrink-0 uppercase tracking-wide ${
-                              isGet ? "bg-emerald-950/40 text-emerald-400 border border-emerald-900/30" : "bg-sky-950/40 text-sky-450 border border-sky-900/30"
-                            }`}>
+                          <div
+                            key={i}
+                            className="p-3.5 hover:bg-slate-800/30 transition-all flex items-start gap-3"
+                          >
+                            <span className="text-gray-600 shrink-0 text-[10px] mt-0.5">
+                              {log.timestamp}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-md font-extrabold text-[10px] shrink-0 uppercase tracking-wide ${
+                                isGet
+                                  ? "bg-emerald-950/40 text-emerald-400 border border-emerald-900/30"
+                                  : "bg-sky-950/40 text-sky-450 border border-sky-900/30"
+                              }`}
+                            >
                               {log.method}
                             </span>
                             <div className="flex-grow min-w-0">
-                              <p className="font-extrabold text-slate-200 truncate">{log.path}</p>
+                              <p className="font-extrabold text-slate-200 truncate">
+                                {log.path}
+                              </p>
                               {log.payload && (
                                 <p className="text-[10px] text-indigo-300 font-semibold truncate mt-1">
                                   Payload: {log.payload}
                                 </p>
                               )}
                             </div>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 font-extrabold ${
-                              log.status < 300 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
-                            }`}>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 font-extrabold ${
+                                log.status < 300
+                                  ? "bg-emerald-500/10 text-emerald-400"
+                                  : "bg-rose-500/10 text-rose-400"
+                              }`}
+                            >
                               {log.status}
                             </span>
                           </div>
@@ -235,7 +270,10 @@ export default function BackendSandbox() {
                       Dynamic Synchronized Mock Datastore
                     </h4>
                     <p className="text-[11px] text-indigo-200 mt-1 leading-relaxed">
-                      This represents the active workspace memory database. Changes submitted by applicants (resumes, candidate details) & employer edits (job titles, salaries) save instantly to this tree.
+                      This represents the active workspace memory database.
+                      Changes submitted by applicants (resumes, candidate
+                      details) & employer edits (job titles, salaries) save
+                      instantly to this tree.
                     </p>
                   </div>
 
@@ -261,7 +299,9 @@ export default function BackendSandbox() {
                       Ready to Connect Frontend Layer
                     </h4>
                     <p className="text-xs text-gray-400 leading-relaxed">
-                      Give your team this snippet so they can inspect how we wired up the React components with the stateful server endpoints easily:
+                      Give your team this snippet so they can inspect how we
+                      wired up the React components with the stateful server
+                      endpoints easily:
                     </p>
                   </div>
 
@@ -299,9 +339,13 @@ function MyCareersBoard() {
               {activeTab === "branches" && (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-xs font-black text-white">Your Team's Branches</h4>
+                    <h4 className="text-xs font-black text-white">
+                      Your Team&rsquo;s Branches
+                    </h4>
                     <p className="text-xs text-gray-400 leading-normal mt-0.5">
-                      Below is what they currently have. Our implementation here is designed to immediately connect `feature/backend-api` and `feature/user-model` branches.
+                      Below is what they currently have. Our implementation here
+                      is designed to immediately connect `feature/backend-api`
+                      and `feature/user-model` branches.
                     </p>
                   </div>
 
@@ -309,31 +353,44 @@ function MyCareersBoard() {
                     <div className="p-3.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span className="font-extrabold text-slate-200">main</span>
-                        <span className="text-[9px] bg-slate-800 py-0.5 px-2 rounded-full text-slate-400 font-extrabold font-mono text-center">Default</span>
+                        <span className="font-extrabold text-slate-200">
+                          main
+                        </span>
+                        <span className="text-[9px] bg-slate-800 py-0.5 px-2 rounded-full text-slate-400 font-extrabold font-mono text-center">
+                          Default
+                        </span>
                       </div>
-                      <span className="text-gray-500 text-[10px]">Activated with Express Integration</span>
+                      <span className="text-gray-500 text-[10px]">
+                        Activated with Express Integration
+                      </span>
                     </div>
 
                     <div className="p-3.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                        <span className="font-extrabold text-indigo-300">feature/backend-api</span>
+                        <span className="font-extrabold text-indigo-300">
+                          feature/backend-api
+                        </span>
                       </div>
-                      <span className="text-indigo-400 text-[10px] font-bold">READY TO DEPLOY / FULLY ALIGNED</span>
+                      <span className="text-indigo-400 text-[10px] font-bold">
+                        READY TO DEPLOY / FULLY ALIGNED
+                      </span>
                     </div>
 
                     <div className="p-3.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-                        <span className="font-extrabold text-sky-300">feature/user-model</span>
+                        <span className="font-extrabold text-sky-300">
+                          feature/user-model
+                        </span>
                       </div>
-                      <span className="text-sky-400 text-[10px]">MAPPED TO CandidateAuth / EmployerAuth</span>
+                      <span className="text-sky-400 text-[10px]">
+                        MAPPED TO CandidateAuth / EmployerAuth
+                      </span>
                     </div>
                   </div>
                 </div>
               )}
-
             </div>
 
             {/* Sticky Diagnostics Footer */}
@@ -346,7 +403,6 @@ function MyCareersBoard() {
                 Endpoint base: <strong className="text-gray-200">/api/</strong>
               </span>
             </div>
-
           </motion.div>
         )}
       </AnimatePresence>

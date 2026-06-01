@@ -1,4 +1,4 @@
-import { Job, Category } from "../types";
+import { Job, Category } from "./types";
 
 export const CATEGORIES: Category[] = [
   { id: "developer-software", name: "Developer / Software Eng.", icon: "Code", count: 42 },

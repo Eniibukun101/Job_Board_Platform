@@ -40,7 +40,7 @@ export default function EmployerLoginForm() {
       }
 
       saveStoredAuth(response);
-      router.push("/company-profile");
+      router.push("/portal/employer");
     } catch (err) {
       setError(
         err instanceof Error

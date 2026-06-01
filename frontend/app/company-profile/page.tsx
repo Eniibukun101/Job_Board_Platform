@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { updateCurrentUserProfile } from "@/lib/api";
 import { getStoredAuth, updateStoredUser } from "@/lib/auth";
 
 export default function CompanyProfilePage() {
+  const router = useRouter();
   const [industry, setIndustry] = useState("");
   const [website, setWebsite] = useState("");
   const [location, setLocation] = useState("");
@@ -50,6 +52,7 @@ export default function CompanyProfilePage() {
 
       updateStoredUser(response.user);
       setSuccessMessage("Your company profile has been saved.");
+      router.push("/portal/employer");
     } catch (err) {
       setError(
         err instanceof Error

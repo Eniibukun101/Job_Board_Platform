@@ -1,12 +1,12 @@
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import type { AuthUser } from "@/lib/api";
 import { getCurrentUser } from "@/lib/api";
 import { saveStoredAuth } from "@/lib/auth";
 
-export default function GoogleAuthCallbackPage() {
+function GoogleAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Finishing Google sign-in...");
@@ -44,8 +44,8 @@ export default function GoogleAuthCallbackPage() {
         saveStoredAuth({ token: authToken, user });
         router.replace(
           user.userType === "Employer"
-            ? "/company-profile"
-            : "/employee-onboarding",
+            ? "/portal/employer"
+            : "/portal/dashboard",
         );
       } catch {
         setMessage("Google authentication returned invalid user data.");
@@ -64,5 +64,28 @@ export default function GoogleAuthCallbackPage() {
         <p className="mt-4 text-sm text-gray-600">{message}</p>
       </div>
     </main>
+  );
+}
+
+function GoogleAuthCallbackFallback() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 text-center">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <h1 className="text-2xl font-bold text-primary">
+          Google Authentication
+        </h1>
+        <p className="mt-4 text-sm text-gray-600">
+          Finishing Google sign-in...
+        </p>
+      </div>
+    </main>
+  );
+}
+
+export default function GoogleAuthCallbackPage() {
+  return (
+    <Suspense fallback={<GoogleAuthCallbackFallback />}>
+      <GoogleAuthCallbackContent />
+    </Suspense>
   );
 }
