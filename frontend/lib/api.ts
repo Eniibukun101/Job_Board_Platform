@@ -33,9 +33,7 @@ export interface ApiErrorPayload {
   errors?: ApiValidationError[];
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://job-board-platform-msw6.onrender.com/api";
+const API_BASE_URL = "https://job-board-platform-msw6.onrender.com/api";
 
 function buildErrorMessage(payload: ApiErrorPayload | null, fallback: string) {
   if (!payload) return fallback;
