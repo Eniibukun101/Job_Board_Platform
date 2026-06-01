@@ -1,6 +1,36 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Job, Application, DashboardNotification, Interview } from "./types";
 import { INITIAL_JOBS } from "./data/jobData";
+import {
+  type ApiApplication,
+  type ApiInterview,
+  type ApiJob,
+  type ApiNotification,
+  type AuthUser,
+  applyToJob,
+  createInterviewEntry,
+  createJobListing,
+  deleteInterviewEntry,
+  deleteJobListing,
+  getCurrentUser,
+  getEmployerListings,
+  getJobApplications,
+  getMyApplications,
+  getMyInterviews,
+  getMyNotifications,
+  getPublicJobs,
+  getSavedJobs,
+  saveJobForUser,
+  unsaveJobForUser,
+  updateCurrentUserProfile,
+  updateInterviewEntry,
+  updateJobApplicationStatus,
+  updateJobListing,
+} from "@/lib/api";
+import { clearStoredAuth, getStoredAuth, updateStoredUser } from "@/lib/auth";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import DoubleBanners from "./components/DoubleBanners";
@@ -8,67 +38,279 @@ import Categories from "./components/Categories";
 import Partners from "./components/Partners";
 import JobsHorizontalScroll from "./components/JobsHorizontalScroll";
 import Newsletter from "./components/Newsletter";
-import { X, Upload, CheckCircle, FileText, MapPin } from "lucide-react";
+import { X, Upload, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import DashboardPortal from "./components/DashboardPortal";
 import EmployerPortal from "./components/EmployerPortal";
 import ProfilePage from "./components/ProfilePage";
 import JobDetailPage from "./components/JobDetailPage";
 import NotificationsPage from "./components/NotificationsPage";
-import { apiService } from "./lib/api";
-import BackendSandbox from "./components/BackendSandbox";
 
-export default function App() {
-  const [currentView, setCurrentView] = useState<"home" | "dashboard" | "employer" | "login" | "profile" | "job-details" | "notifications">("home");
-  const [loginMode, setLoginMode] = useState<"login" | "create">("login");
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+type AppView =
+  | "home"
+  | "dashboard"
+  | "employer"
+  | "login"
+  | "profile"
+  | "job-details"
+  | "notifications";
+
+interface AppProps {
+  initialView?: AppView;
+  initialSelectedJobId?: string;
+}
+
+const ROUTES_BY_VIEW: Record<Exclude<AppView, "login">, string> = {
+  home: "/",
+  dashboard: "/portal/dashboard",
+  employer: "/portal/employer",
+  profile: "/portal/profile",
+  "job-details": "/portal/job-details",
+  notifications: "/portal/notifications",
+};
+
+const DEFAULT_PROFILE = {
+  name: "",
+  email: "",
+  phone: "",
+  location: "",
+  aboutMe: "",
+  skills: [] as string[],
+  linkedin: "",
+  portfolio: "",
+  experiences: [] as Array<{
+    title: string;
+    location: string;
+    company: string;
+  }>,
+};
+
+function getLogoBg(company: string) {
+  const normalized = company.toLowerCase();
+  if (normalized.includes("google")) return "bg-red-500 text-white";
+  if (normalized.includes("supabase")) return "bg-emerald-950 text-emerald-400";
+  if (normalized.includes("vercel")) return "bg-black text-white";
+  if (normalized.includes("figma")) return "bg-rose-500 text-white";
+  if (normalized.includes("stripe")) return "bg-blue-600 text-white";
+  return "bg-[#21222D] text-white";
+}
+
+function formatSalary(min?: number | null, max?: number | null) {
+  if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
+  if (min) return `From $${min.toLocaleString()}`;
+  if (max) return `Up to $${max.toLocaleString()}`;
+  return "Not specified";
+}
+
+function parseSalaryRange(salary: string) {
+  const values = salary
+    .match(/\d[\d,]*/g)
+    ?.map((value) => Number(value.replace(/,/g, "")));
+
+  if (!values?.length) {
+    return { salaryMin: null, salaryMax: null };
+  }
+
+  return {
+    salaryMin: values[0] ?? null,
+    salaryMax: values[1] ?? values[0] ?? null,
+  };
+}
+
+function formatPostedTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Posted recently";
+
+  const diffHours = Math.max(
+    1,
+    Math.round((Date.now() - date.getTime()) / (1000 * 60 * 60)),
+  );
+
+  if (diffHours < 24)
+    return `Posted ${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  const diffDays = Math.round(diffHours / 24);
+  return `Posted ${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
+function mapBackendStatusToUi(status: ApiApplication["status"]) {
+  switch (status) {
+    case "Pending":
+      return "Submitted";
+    case "Reviewed":
+      return "Reviewing";
+    case "Shortlisted":
+      return "Interview Scheduled";
+    case "Hired":
+      return "Offered";
+    case "Rejected":
+    default:
+      return "Rejected";
+  }
+}
+
+function mapUiStatusToBackend(status: string): ApiApplication["status"] {
+  switch (status) {
+    case "Submitted":
+      return "Pending";
+    case "Reviewing":
+      return "Reviewed";
+    case "Interview Scheduled":
+      return "Shortlisted";
+    case "Offered":
+      return "Hired";
+    case "Rejected":
+    default:
+      return "Rejected";
+  }
+}
+
+function mapBackendJobToUi(job: ApiJob): Job {
+  return {
+    id: String(job.id),
+    title: job.title,
+    company: job.company,
+    logoBg: getLogoBg(job.company),
+    location: job.location,
+    type: job.jobType,
+    salary: formatSalary(job.salaryMin, job.salaryMax),
+    description: job.description,
+    postedTime: formatPostedTime(job.createdAt),
+    category: job.category || "developer-software",
+    applicants: job.applications?.length || 0,
+    experienceLevel:
+      job.experience === "Entry"
+        ? "Junior"
+        : job.experience === "Mid"
+          ? "Mid"
+          : "Senior",
+  };
+}
+
+function mapBackendApplicationToUi(app: ApiApplication): Application {
+  return {
+    id: String(app.id),
+    jobId: String(app.jobId),
+    candidateName: app.applicant?.name || "Applicant",
+    candidateEmail: app.applicant?.email || "",
+    resumeName: app.resumeUrl || "Resume submitted",
+    appliedAt: app.createdAt.split("T")[0],
+    status: mapBackendStatusToUi(app.status),
+  };
+}
+
+function mapAuthUserToProfile(user: AuthUser) {
+  return {
+    name: user.name || "",
+    email: user.email || "",
+    phone: user.phone || "",
+    location: user.location || "",
+    aboutMe: user.bio || "",
+    skills: user.skills || [],
+    linkedin: user.linkedin || "",
+    portfolio: user.portfolio || "",
+    experiences: user.experiences || [],
+  };
+}
+
+function resolveNotificationTab(createdAt: string) {
+  const createdTime = new Date(createdAt).getTime();
+  const diff = Date.now() - createdTime;
+  const day = 24 * 60 * 60 * 1000;
+  if (diff <= day) return "today" as const;
+  if (diff <= 7 * day) return "week" as const;
+  return "month" as const;
+}
+
+function mapBackendNotificationToUi(
+  notification: ApiNotification,
+): DashboardNotification {
+  return {
+    id: `notif-${notification.id}`,
+    company: notification.company,
+    status: notification.message,
+    time: new Date(notification.createdAt).toLocaleString(),
+    logoType: notification.logoType,
+    tab: resolveNotificationTab(notification.createdAt),
+  };
+}
+
+function mapBackendInterviewToUi(interview: ApiInterview): Interview {
+  return {
+    id: String(interview.id),
+    title: interview.title,
+    company: interview.company,
+    description: interview.description || "",
+    date: interview.date,
+    time: interview.time,
+    completed: interview.completed,
+  };
+}
+
+function mapJobToDashboardCard(job: Job, savedJobIds: string[]) {
+  return {
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    type: job.type,
+    salary: job.salary,
+    saved: savedJobIds.includes(job.id),
+  };
+}
+
+export default function App({
+  initialView = "home",
+  initialSelectedJobId,
+}: AppProps) {
+  const router = useRouter();
+  const [currentView, setCurrentView] = useState<AppView>(initialView);
+  const [, setLoginMode] = useState<"login" | "create">("login");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
+  const [resumeUrl, setResumeUrl] = useState("");
 
   // Unified navigation controller that handles custom login state parameters
-  const handleNavigate = (
-    view: "home" | "dashboard" | "employer" | "login" | "profile" | "job-details" | "notifications", 
-    mode?: "login" | "create"
-  ) => {
+  const handleNavigate = (view: AppView, mode?: "login" | "create") => {
     if (view === "login") {
       setLoginMode(mode || "login");
+      setCurrentView(view);
+      router.push(mode === "create" ? "/signup" : "/login");
+      return;
     }
-    setCurrentView(view);
-  };
-  const [isEmployerLoggedIn, setIsEmployerLoggedIn] = useState(true);
-  const [employerProfile, setEmployerProfile] = useState<{name: string, email: string} | null>({ name: "JobNest Premium Partner", email: "hiring@partner.com" });
-  const [pendingApplyJob, setPendingApplyJob] = useState<Job | null>(null);
-  const [pendingApplyView, setPendingApplyView] = useState<"home" | "job-details" | null>(null);
-  const [selectedJobForDetails, setSelectedJobForDetails] = useState<Job | null>(null);
 
-  // Profile fields matching Daniel Adeyemi (Freelancer)
-  const [profile, setProfile] = useState({
-    name: "Daniel Adeyemi",
-    email: "daniel.adeyemi.dev@gmail.com",
-    phone: "+234 812 345 6789",
-    location: "Lagos",
-    aboutMe: "Passionate frontend developer with 3+ years of experience building responsive and user-friendly web applications. Skilled in modern JavaScript frameworks and focused on creating clean, efficient, and accessible interfaces.",
-    skills: [
-      "Node.js & Express",
-      "RESTful API Development",
-      "Database Management",
-      "Authentication & Security",
-      "Server Optimization"
-    ],
-    linkedin: "linkedin.com/in/danieladeyemi",
-    portfolio: "behance.net/danieladeyemi",
-    experiences: [
-      {
-        title: "Frontend Developer Skills",
-        location: "15 Aminu Kano Crescent, Wuse II, Abuja, Nigeria",
-        company: "NexaCore Technologies"
-      },
-      {
-        title: "Backend Developer Skills",
-        location: "8 Oluwaleimu Street, Ikeja GRA, Lagos, Nigeria",
-        company: "TechNova Labs"
+    if (!isLoggedIn) {
+      if (view === "employer") {
+        router.push("/employer");
+        return;
       }
-    ]
-  });
 
+      if (["dashboard", "profile", "notifications"].includes(view)) {
+        router.push("/login");
+        return;
+      }
+    }
+
+    setCurrentView(view);
+    router.push(ROUTES_BY_VIEW[view]);
+  };
+  const [pendingApplyJob, setPendingApplyJob] = useState<Job | null>(null);
+  const [pendingApplyView, setPendingApplyView] = useState<
+    "home" | "job-details" | null
+  >(null);
+  const [selectedJobForDetails, setSelectedJobForDetails] =
+    useState<Job | null>(
+      initialSelectedJobId
+        ? INITIAL_JOBS.find((job) => job.id === initialSelectedJobId) ||
+            INITIAL_JOBS[0]
+        : initialView === "job-details"
+          ? INITIAL_JOBS[0]
+          : null,
+    );
+
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
   const [isCvUploaded, setIsCvUploaded] = useState(false);
   const [isAboutMeCompleted, setIsAboutMeCompleted] = useState(false);
@@ -79,248 +321,405 @@ export default function App() {
     setToastMessage(msg);
   };
 
-  // Real local state list of jobs to allow candidates to apply!
+  // Real job/application state linked to backend
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>(
+    [],
+  );
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [savedJobs, setSavedJobs] = useState<Job[]>([]);
+  const [customActiveJobs, setCustomActiveJobs] = useState<Job[]>([]);
 
-  // Dynamic unified applications state shared with employer
-  const [applications, setApplications] = useState<Application[]>([
-    {
-      id: "app-1",
-      jobId: "dev-2",
-      candidateName: "Alex Mercer",
-      candidateEmail: "alex.mercer@gmail.com",
-      resumeName: "Alex_Mercer_CV.pdf",
-      appliedAt: "2026-05-18",
-      status: "Reviewing"
-    },
-    {
-      id: "app-2",
-      jobId: "dst-2",
-      candidateName: "Alex Mercer",
-      candidateEmail: "alex.mercer@gmail.com",
-      resumeName: "Alex_Design_Portfolio.pdf",
-      appliedAt: "2026-05-15",
-      status: "Interview Scheduled"
-    },
-    {
-      id: "app-3",
-      jobId: "dev-1",
-      candidateName: "Elena Rostova",
-      candidateEmail: "elena.r@design.so",
-      resumeName: "Elena_Designer_CV.pdf",
-      appliedAt: "2026-05-19",
-      status: "Submitted"
-    },
-    {
-      id: "app-4",
-      jobId: "employer-custom-pre-2",
-      candidateName: "Marcus Vance",
-      candidateEmail: "marcus.vance@tech.co",
-      resumeName: "Marcus_Vance_Resume.pdf",
-      appliedAt: "2026-05-20",
-      status: "Reviewing"
+  const syncUserIntoState = (user: AuthUser) => {
+    setAuthUser(user);
+    setIsLoggedIn(true);
+    setProfile(mapAuthUserToProfile(user));
+    setProfilePhotoUrl(user.photoUrl || "");
+    setResumeUrl(user.resumeUrl || "");
+    setIsPhotoUploaded(Boolean(user.photoUrl));
+    setIsCvUploaded(Boolean(user.resumeUrl));
+    setIsAboutMeCompleted(Boolean((user.bio || "").trim().length > 15));
+  };
+
+  const loadPublicJobData = async () => {
+    try {
+      const response = await getPublicJobs({ limit: 50 });
+      const mappedJobs = response.jobs.map(mapBackendJobToUi);
+      if (mappedJobs.length > 0) {
+        setJobs(mappedJobs);
+      }
+    } catch (error) {
+      console.warn("Unable to load public jobs from backend:", error);
     }
-  ]);
+  };
 
-  // Dynamic unified notifications state shared with dashboard
-  const [notifications, setNotifications] = useState<DashboardNotification[]>([
-    {
-      id: "n-1",
-      company: "CloudNest Systems",
-      status: "Your application has been rejected",
-      time: "10:55am 22nd April",
-      logoType: "x",
-      tab: "today"
-    },
-    {
-      id: "n-2",
-      company: "SterlingPath Ltd.",
-      status: "Your application is under review",
-      time: "10:55am 22nd April",
-      logoType: "car",
-      tab: "today"
-    },
-    {
-      id: "n-3",
-      company: "CodeSphere Inc.",
-      status: "Your application has moved to the next step",
-      time: "10:55am 22nd April",
-      logoType: "spotify",
-      tab: "today"
-    },
-    {
-      id: "n-4",
-      company: "CloudNest Systems",
-      status: "Your application is under review",
-      time: "10:55am 22nd April",
-      logoType: "x",
-      tab: "today"
-    },
-    {
-      id: "n-5",
-      company: "OptimaFlow Inc.",
-      status: "Your application is under review",
-      time: "10:55am 22nd April",
-      logoType: "spotify",
-      tab: "today"
-    },
-    {
-      id: "n-w-1",
-      company: "SterlingPath Ltd.",
-      status: "Your application has moved to final round",
-      time: "11:20am 18th April",
-      logoType: "car",
-      tab: "week"
-    },
-    {
-      id: "n-w-2",
-      company: "CodeSphere Inc.",
-      status: "Application received. Verification pending.",
-      time: "09:40am 15th April",
-      logoType: "spotify",
-      tab: "week"
-    },
-    {
-      id: "n-m-1",
-      company: "OptimaFlow Inc.",
-      status: "Your resume hash has been securely persisted in registry.",
-      time: "04:15pm 10th April",
-      logoType: "spotify",
-      tab: "month"
+  const loadApplicantData = async (token: string) => {
+    try {
+      const [
+        applicationResponse,
+        notificationResponse,
+        interviewResponse,
+        savedJobsResponse,
+      ] = await Promise.all([
+        getMyApplications(token),
+        getMyNotifications(token),
+        getMyInterviews(token),
+        getSavedJobs(token),
+      ]);
+
+      setApplications(
+        applicationResponse.applications.map(mapBackendApplicationToUi),
+      );
+      setNotifications(
+        notificationResponse.notifications.map(mapBackendNotificationToUi),
+      );
+      setInterviews(interviewResponse.interviews.map(mapBackendInterviewToUi));
+      setSavedJobs(savedJobsResponse.jobs.map(mapBackendJobToUi));
+    } catch (error) {
+      console.warn("Unable to load applicant data:", error);
+      setApplications([]);
+      setNotifications([]);
+      setInterviews([]);
+      setSavedJobs([]);
     }
-  ]);
+  };
 
-  // Dynamic unified interviews state shared with dashboard / calendar
-  const [interviews, setInterviews] = useState<Interview[]>([
-    {
-      id: "int-1",
-      title: "Technical Screen Interview",
-      company: "Global Nexus",
-      description: "Technical Round 2 layout design system challenge",
-      date: "2024-10-15",
-      time: "10:30 AM",
-      completed: false
-    },
-    {
-      id: "int-2",
-      title: "HR Dialogue Discussion",
-      company: "MetaCore",
-      description: "HR credentials, matching expectation and profile walkthrough",
-      date: "2024-10-16",
-      time: "2:00 PM",
-      completed: false
-    },
-    {
-      id: "int-3",
-      title: "Portfolio Onsite Session",
-      company: "Figma Inc",
-      description: "Case-study presentation of system layouts built recently",
-      date: "2024-10-18",
-      time: "1:00 PM",
-      completed: true
+  const loadEmployerData = async (token: string) => {
+    try {
+      const response = await getEmployerListings(token);
+      const mappedJobs = response.jobs.map(mapBackendJobToUi);
+      setCustomActiveJobs(mappedJobs);
+
+      const [applicationGroups, notificationResponse] = await Promise.all([
+        Promise.all(
+          response.jobs.map((job) =>
+            getJobApplications(job.id, token).catch(() => ({
+              applications: [],
+            })),
+          ),
+        ),
+        getMyNotifications(token),
+      ]);
+
+      setApplications(
+        applicationGroups
+          .flatMap((group) => group.applications)
+          .map(mapBackendApplicationToUi),
+      );
+      setNotifications(
+        notificationResponse.notifications.map(mapBackendNotificationToUi),
+      );
+    } catch (error) {
+      console.warn("Unable to load employer workspace data:", error);
+      setCustomActiveJobs([]);
+      setApplications([]);
+      setNotifications([]);
     }
-  ]);
+  };
 
-  // Prepopulate employer active list so it looks highly complete on first load
-  const [customActiveJobs, setCustomActiveJobs] = useState<Job[]>([
-    {
-      id: "employer-custom-pre-1",
-      title: "Senior Product Designer",
-      company: "Google",
-      logoBg: "bg-red-500 text-white",
-      location: "Mountain View, CA",
-      type: "Full-time",
-      salary: "$180k - $210k",
-      description: "Own the visual and navigational components of next-generation workspace layouts with modern design guidelines.",
-      postedTime: "Posted 3 days ago",
-      category: "design-creative",
-      applicants: 12,
-      experienceLevel: "Senior"
-    },
-    {
-      id: "employer-custom-pre-2",
-      title: "Core Infrastructure Engineer",
-      company: "Supabase",
-      logoBg: "bg-emerald-950 text-emerald-400",
-      location: "Remote, Global",
-      type: "Contract",
-      salary: "Custom Rate / hr",
-      description: "Scale open-source PostgreSQL databases services and optimize real-time synchronizations.",
-      postedTime: "Posted 1 day ago",
-      category: "developer-software",
-      applicants: 4,
-      experienceLevel: "Senior"
-    }
-  ]);
-
-  // Sync with live Express Backend on startup
   useEffect(() => {
-    async function loadBackendData() {
-      try {
-        const backendJobs = await apiService.getJobs();
-        if (backendJobs && backendJobs.length > 0) {
-          setJobs(backendJobs);
-          const employerJobs = backendJobs.filter(j => j.id.startsWith("backend-") || j.id.startsWith("employer-"));
-          if (employerJobs.length > 0) {
-            setCustomActiveJobs(employerJobs);
-          }
+    let isMounted = true;
+
+    async function hydrateApp() {
+      await loadPublicJobData();
+
+      const storedAuth = getStoredAuth();
+      if (!storedAuth?.token) {
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setAuthReady(true);
         }
-      } catch (e) {
-        console.warn("Express API offline, falling back to local runtime:", e);
+        return;
       }
 
       try {
-        const backendApps = await apiService.getApplications();
-        if (backendApps && backendApps.length > 0) {
-          setApplications(backendApps);
+        const response = await getCurrentUser(storedAuth.token);
+        if (!isMounted) return;
+
+        updateStoredUser(response.user);
+        setAuthToken(storedAuth.token);
+        syncUserIntoState(response.user);
+
+        if (response.user.userType === "Employer") {
+          await loadEmployerData(storedAuth.token);
+        } else {
+          await loadApplicantData(storedAuth.token);
         }
-      } catch (e) {
-        console.warn("Express API offline, using local application state:", e);
+      } catch (error) {
+        console.warn("Unable to restore authenticated session:", error);
+        clearStoredAuth();
+        if (isMounted) {
+          setAuthToken(null);
+          setAuthUser(null);
+          setIsLoggedIn(false);
+          setProfile(DEFAULT_PROFILE);
+        }
+      } finally {
+        if (isMounted) {
+          setAuthReady(true);
+        }
       }
     }
-    loadBackendData();
+
+    hydrateApp();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    if (!isLoggedIn && currentView === "employer") {
+      router.replace("/employer");
+      return;
+    }
+
+    if (
+      !isLoggedIn &&
+      ["dashboard", "profile", "notifications"].includes(currentView)
+    ) {
+      router.replace("/login");
+    }
+  }, [authReady, currentView, isLoggedIn, router]);
+
+  useEffect(() => {
+    if (!initialSelectedJobId) return;
+
+    const selectedJob = [...jobs, ...customActiveJobs].find(
+      (job) => job.id === initialSelectedJobId,
+    );
+
+    if (selectedJob) {
+      setSelectedJobForDetails(selectedJob);
+    }
+  }, [customActiveJobs, initialSelectedJobId, jobs]);
+
+  useEffect(() => {
+    if (!authUser) return;
+    setHomeCandidateName((current) => current || authUser.name || "");
+    setHomeCandidateEmail((current) => current || authUser.email || "");
+  }, [authUser]);
+
+  const persistProfileUpdate = async (
+    updates: Partial<{
+      name: string;
+      email: string;
+      phone: string;
+      bio: string;
+      location: string;
+      role: string;
+      qualification: string;
+      expectedSalaryRange: string;
+      preferredJobType: string;
+      photoUrl: string;
+      resumeUrl: string;
+      linkedin: string;
+      portfolio: string;
+      skills: string[];
+      experiences: Array<{ title: string; location: string; company: string }>;
+    }>,
+  ) => {
+    if (!authToken) return;
+
+    const response = await updateCurrentUserProfile(updates, authToken);
+    updateStoredUser(response.user);
+    syncUserIntoState(response.user);
+  };
 
   // Add a new job posted by the employer to both global and custom tracks
   const handleAddNewJob = async (newJob: Job) => {
+    if (!authToken) return;
+
     try {
-      const created = await apiService.createJob(newJob);
-      setJobs([created, ...jobs]);
-      setCustomActiveJobs([created, ...customActiveJobs]);
-    } catch (e) {
-      console.error("Could not post job to Express API, saving locally fallback:", e);
-      setJobs([newJob, ...jobs]);
-      setCustomActiveJobs([newJob, ...customActiveJobs]);
+      const { salaryMin, salaryMax } = parseSalaryRange(newJob.salary);
+      const response = await createJobListing(
+        {
+          title: newJob.title,
+          description: newJob.description,
+          company: newJob.company,
+          category: newJob.category,
+          location: newJob.location,
+          salaryMin,
+          salaryMax,
+          jobType: newJob.type,
+          experience:
+            newJob.experienceLevel === "Junior"
+              ? "Entry"
+              : newJob.experienceLevel === "Mid"
+                ? "Mid"
+                : "Senior",
+          skills: [],
+        },
+        authToken,
+      );
+
+      const createdJob = mapBackendJobToUi(response.job);
+      setCustomActiveJobs((prev) => [createdJob, ...prev]);
+      setJobs((prev) => [createdJob, ...prev]);
+    } catch (error) {
+      console.error("Could not post job to backend:", error);
     }
   };
 
   // Delete a job posted by the employer
   const handleDeleteJob = async (jobId: string) => {
+    if (!authToken) return;
+
     try {
-      await apiService.deleteJob(jobId);
-    } catch (e) {
-      console.error("Could not delete job on backend:", e);
+      await deleteJobListing(jobId, authToken);
+      setJobs((prev) => prev.filter((job) => job.id !== jobId));
+      setCustomActiveJobs((prev) => prev.filter((job) => job.id !== jobId));
+    } catch (error) {
+      console.error("Could not delete job on backend:", error);
     }
-    setJobs(jobs.filter(j => j.id !== jobId));
-    setCustomActiveJobs(customActiveJobs.filter(j => j.id !== jobId));
   };
 
   // Update an existing job published by the employer
   const handleUpdateJob = async (updatedJob: Job) => {
+    if (!authToken) return;
+
     try {
-      await apiService.updateJob(updatedJob.id, updatedJob);
-    } catch (e) {
-      console.error("Could not update job on backend:", e);
+      const { salaryMin, salaryMax } = parseSalaryRange(updatedJob.salary);
+      const response = await updateJobListing(
+        updatedJob.id,
+        {
+          title: updatedJob.title,
+          description: updatedJob.description,
+          company: updatedJob.company,
+          category: updatedJob.category,
+          location: updatedJob.location,
+          salaryMin,
+          salaryMax,
+          jobType: updatedJob.type,
+          experience:
+            updatedJob.experienceLevel === "Junior"
+              ? "Entry"
+              : updatedJob.experienceLevel === "Mid"
+                ? "Mid"
+                : "Senior",
+          skills: [],
+        },
+        authToken,
+      );
+
+      const mappedJob = mapBackendJobToUi(response.job);
+      setJobs((prev) =>
+        prev.map((job) => (job.id === updatedJob.id ? mappedJob : job)),
+      );
+      setCustomActiveJobs((prev) =>
+        prev.map((job) => (job.id === updatedJob.id ? mappedJob : job)),
+      );
+      if (selectedJobForDetails && selectedJobForDetails.id === updatedJob.id) {
+        setSelectedJobForDetails(mappedJob);
+      }
+    } catch (error) {
+      console.error("Could not update job on backend:", error);
     }
-    setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
-    setCustomActiveJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
-    if (selectedJobForDetails && selectedJobForDetails.id === updatedJob.id) {
-      setSelectedJobForDetails(updatedJob);
+  };
+
+  const handleUpdateApplicationStatus = async (
+    applicationId: string,
+    nextStatus: string,
+  ) => {
+    if (!authToken) return;
+
+    try {
+      const response = await updateJobApplicationStatus(
+        applicationId,
+        mapUiStatusToBackend(nextStatus),
+        authToken,
+      );
+      setApplications((prev) =>
+        prev.map((application) =>
+          application.id === applicationId
+            ? mapBackendApplicationToUi(response.application)
+            : application,
+        ),
+      );
+
+      if (authUser?.userType === "Applicant") {
+        await loadApplicantData(authToken);
+      }
+      if (authUser?.userType === "Employer") {
+        await loadEmployerData(authToken);
+      }
+    } catch (error) {
+      console.error("Could not update application status:", error);
+    }
+  };
+
+  const handleToggleSavedJob = async (job: Job, shouldSave: boolean) => {
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
+
+    const numericJobId = Number(job.id);
+    if (Number.isNaN(numericJobId)) return;
+
+    try {
+      if (shouldSave) {
+        await saveJobForUser(numericJobId, authToken);
+      } else {
+        await unsaveJobForUser(numericJobId, authToken);
+      }
+      await loadApplicantData(authToken);
+    } catch (error) {
+      console.error("Could not update saved jobs:", error);
+    }
+  };
+
+  const handleCreateInterview = async (interview: Interview) => {
+    if (!authToken) return;
+
+    try {
+      await createInterviewEntry(
+        {
+          company: interview.company,
+          title: interview.title,
+          description: interview.description,
+          date: interview.date,
+          time: interview.time,
+        },
+        authToken,
+      );
+      await loadApplicantData(authToken);
+    } catch (error) {
+      console.error("Could not create interview:", error);
+    }
+  };
+
+  const handleUpdateInterview = async (
+    interviewId: string,
+    updates: Partial<Interview>,
+  ) => {
+    if (!authToken) return;
+
+    try {
+      await updateInterviewEntry(interviewId, updates, authToken);
+      await loadApplicantData(authToken);
+    } catch (error) {
+      console.error("Could not update interview:", error);
+    }
+  };
+
+  const handleDeleteInterview = async (interviewId: string) => {
+    if (!authToken) return;
+
+    try {
+      await deleteInterviewEntry(interviewId, authToken);
+      await loadApplicantData(authToken);
+    } catch (error) {
+      console.error("Could not delete interview:", error);
     }
   };
 
   // Selected Category (default is Developer/Software, which contains 10 jobs in mock, satisfying >8 horizontal scroll on load!)
-  const [selectedCategoryId, setSelectedCategoryId] = useState("developer-software");
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState("developer-software");
 
   // Hero Search keywords
   const [searchTerm, setSearchTerm] = useState("");
@@ -346,131 +745,116 @@ export default function App() {
 
   // Home Screen Apply modal state
   const [homeApplyingJob, setHomeApplyingJob] = useState<Job | null>(null);
-  const [homeCandidateName, setHomeCandidateName] = useState("Sarah Hammond");
-  const [homeCandidateEmail, setHomeCandidateEmail] = useState("sarah.hammond@design.co");
+  const [homeCandidateName, setHomeCandidateName] = useState("");
+  const [homeCandidateEmail, setHomeCandidateEmail] = useState("");
   const [homeResumeName, setHomeResumeName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [homeSuccessApply, setHomeSuccessApply] = useState(false);
 
-  const handleHomeApplySubmit = (e: React.FormEvent) => {
+  const handleHomeApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!homeApplyingJob) return;
+    if (!homeApplyingJob || !authToken) return;
 
-    // Increment applicants counter temporarily
-    setJobs(jobs.map(j => {
-      if (j.id === homeApplyingJob.id) {
-        return { ...j, applicants: j.applicants + 1 };
-      }
-      return j;
-    }));
+    const numericJobId = Number(homeApplyingJob.id);
+    if (Number.isNaN(numericJobId)) {
+      triggerToast(
+        "This job is still using mock data and cannot be applied to through the backend yet.",
+      );
+      return;
+    }
 
-    const appPayload = {
-      jobId: homeApplyingJob.id,
-      candidateName: homeCandidateName || "Sarah Hammond",
-      candidateEmail: homeCandidateEmail || "sarah.hammond@design.co",
-      resumeName: homeResumeName || "Sarah_Hammond_CV.pdf"
-    };
+    try {
+      const response = await applyToJob(
+        numericJobId,
+        {
+          resumeUrl: homeResumeName || resumeUrl || "Resume submitted",
+        },
+        authToken,
+      );
 
-    // Post to Express backend
-    apiService.applyToJob(appPayload)
-      .then(newApp => {
-        setApplications(prev => [newApp, ...prev]);
-      })
-      .catch(err => {
-        console.warn("Direct DB write failed, fallback optimistic save:", err);
-        const newApp: Application = {
-          id: "app-" + Date.now(),
-          jobId: homeApplyingJob.id,
-          candidateName: homeCandidateName || "Sarah Hammond",
-          candidateEmail: homeCandidateEmail || "sarah.hammond@design.co",
-          resumeName: homeResumeName || "Sarah_Hammond_CV.pdf",
-          appliedAt: new Date().toISOString().split('T')[0],
-          status: "Submitted"
-        };
-        setApplications(prev => [newApp, ...prev]);
-      });
-
-    // Push dynamic notification alert
-    const newNotification: DashboardNotification = {
-      id: "n-" + Date.now(),
-      company: homeApplyingJob.company,
-      status: `Your application setup for "${homeApplyingJob.title}" has been successfully received`,
-      time: "Just now",
-      logoType: "car",
-      tab: "today"
-    };
-    setNotifications([newNotification, ...notifications]);
-
-    setHomeSuccessApply(true);
-    setTimeout(() => {
-      setHomeSuccessApply(false);
-      setHomeApplyingJob(null);
-      setHomeResumeName("");
-    }, 2500);
+      setJobs((prev) =>
+        prev.map((job) =>
+          job.id === homeApplyingJob.id
+            ? { ...job, applicants: job.applicants + 1 }
+            : job,
+        ),
+      );
+      setApplications((prev) => [
+        mapBackendApplicationToUi(response.application),
+        ...prev,
+      ]);
+      setHomeSuccessApply(true);
+      setTimeout(() => {
+        setHomeSuccessApply(false);
+        setHomeApplyingJob(null);
+        setHomeResumeName("");
+      }, 2500);
+    } catch (error) {
+      console.warn("Unable to submit application:", error);
+    }
   };
 
-  const handleJobDetailApplySubmit = (jobToApply: Job, cvFileName: string) => {
-    setJobs(jobs.map(j => {
-      if (j.id === jobToApply.id) {
-        return { ...j, applicants: j.applicants + 1 };
-      }
-      return j;
-    }));
+  const handleJobDetailApplySubmit = async (
+    jobToApply: Job,
+    cvFileName: string,
+  ) => {
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
 
-    const appPayload = {
-      jobId: jobToApply.id,
-      candidateName: profile.name || "Daniel Adeyemi",
-      candidateEmail: profile.email || "daniel.adeyemi.dev@gmail.com",
-      resumeName: cvFileName || "Daniel_Adeyemi_CV.pdf"
-    };
+    const numericJobId = Number(jobToApply.id);
+    if (Number.isNaN(numericJobId)) {
+      triggerToast(
+        "This job is still using mock data and cannot be applied to through the backend yet.",
+      );
+      return;
+    }
 
-    // Post to Express backend
-    apiService.applyToJob(appPayload)
-      .then(newApp => {
-        setApplications(prev => [newApp, ...prev]);
-      })
-      .catch(err => {
-        console.warn("Direct DB write failed, fallback optimistic save:", err);
-        const newApp: Application = {
-          id: "app-" + Date.now(),
-          jobId: jobToApply.id,
-          candidateName: profile.name || "Daniel Adeyemi",
-          candidateEmail: profile.email || "daniel.adeyemi.dev@gmail.com",
-          resumeName: cvFileName || "Daniel_Adeyemi_CV.pdf",
-          appliedAt: new Date().toISOString().split('T')[0],
-          status: "Submitted"
-        };
-        setApplications(prev => [newApp, ...prev]);
-      });
+    try {
+      const response = await applyToJob(
+        numericJobId,
+        { resumeUrl: cvFileName || resumeUrl || "Resume submitted" },
+        authToken,
+      );
 
-    const newNotification: DashboardNotification = {
-      id: "n-" + Date.now(),
-      company: jobToApply.company,
-      status: `Application submitted for "${jobToApply.title}" (Reviewing)`,
-      time: "Just now",
-      logoType: "car",
-      tab: "today"
-    };
-    setNotifications([newNotification, ...notifications]);
-
-    triggerToast(`Successfully applied to ${jobToApply.title} at ${jobToApply.company}!`);
+      setJobs((prev) =>
+        prev.map((job) =>
+          job.id === jobToApply.id
+            ? { ...job, applicants: job.applicants + 1 }
+            : job,
+        ),
+      );
+      setApplications((prev) => [
+        mapBackendApplicationToUi(response.application),
+        ...prev,
+      ]);
+      triggerToast(
+        `Successfully applied to ${jobToApply.title} at ${jobToApply.company}!`,
+      );
+    } catch (error) {
+      console.warn("Unable to submit job application:", error);
+      triggerToast("Unable to submit your application right now.");
+    }
   };
 
   // Apply inputs and filters
   const filteredSuggestedJobs = jobs.filter((job) => {
     // Category check
     const matchesCategory = job.category === selectedCategoryId;
-    
+
     // Search keyword check (supports both real-time typing and submitted terms)
     const currentKeyword = searchTerm || activeSearchTerm;
-    const matchesKeyword = !currentKeyword || 
-      job.title.toLowerCase().includes(currentKeyword.toLowerCase()) || 
+    const matchesKeyword =
+      !currentKeyword ||
+      job.title.toLowerCase().includes(currentKeyword.toLowerCase()) ||
       job.company.toLowerCase().includes(currentKeyword.toLowerCase()) ||
       job.description.toLowerCase().includes(currentKeyword.toLowerCase());
 
     // Location search check
     const currentLoc = locationSearch || activeLocationSearch;
-    const matchesLocation = !currentLoc || 
+    const matchesLocation =
+      !currentLoc ||
       job.location.toLowerCase().includes(currentLoc.toLowerCase());
 
     return matchesCategory && matchesKeyword && matchesLocation;
@@ -478,19 +862,25 @@ export default function App() {
 
   return (
     <div className="bg-[#f4f5f7] min-h-screen font-sans antialiased text-gray-900 selection:bg-indigo-100">
-      
       {/* Navigation Header */}
-      <Header 
-        currentView={currentView} 
-        onNavigate={handleNavigate} 
+      <Header
+        currentView={currentView}
+        onNavigate={handleNavigate}
         isLoggedIn={isLoggedIn}
         onLogOut={() => {
+          clearStoredAuth();
+          setAuthToken(null);
+          setAuthUser(null);
           setIsLoggedIn(false);
-          setCurrentView("home");
+          setProfile(DEFAULT_PROFILE);
+          setProfilePhotoUrl("");
+          setResumeUrl("");
+          handleNavigate("home");
         }}
-        profileName={profile.name}
-        profileRole={profile.name === "Daniel Adeyemi" ? "Freelancer" : "Product Designer"}
+        profileName={profile.name || authUser?.name || "Guest"}
+        profileRole={authUser?.role || authUser?.userType || "Guest"}
         isPhotoUploaded={isPhotoUploaded}
+        photoUrl={profilePhotoUrl}
       />
 
       <AnimatePresence mode="wait">
@@ -503,7 +893,7 @@ export default function App() {
             transition={{ duration: 0.2 }}
           >
             {/* Dark Sleek Hero Section */}
-            <Hero 
+            <Hero
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               locationSearch={locationSearch}
@@ -515,7 +905,7 @@ export default function App() {
             <DoubleBanners onNavigate={handleNavigate} />
 
             {/* Choose Your Category Grid */}
-            <Categories 
+            <Categories
               selectedCategoryId={selectedCategoryId}
               onSelectCategory={handleSelectCategory}
             />
@@ -524,17 +914,19 @@ export default function App() {
             <Partners />
 
             {/* Jobs list: horizontal carousel scrolling if item count > 8, grid if <= 8 */}
-            <JobsHorizontalScroll 
+            <JobsHorizontalScroll
               jobs={filteredSuggestedJobs}
               selectedCategoryId={selectedCategoryId}
               onApplyClick={(job) => {
                 if (!isLoggedIn) {
                   setPendingApplyJob(job);
                   setPendingApplyView("job-details");
-                  setCurrentView("login");
+                  handleNavigate("login");
                 } else {
                   setSelectedJobForDetails(job);
-                  setCurrentView("job-details");
+                  router.push(
+                    `/portal/job-details?jobId=${encodeURIComponent(job.id)}`,
+                  );
                 }
               }}
             />
@@ -552,23 +944,27 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.25 }}
           >
-            <DashboardPortal 
+            <DashboardPortal
               notifications={notifications}
               setNotifications={setNotifications}
               interviews={interviews}
               setInterviews={setInterviews}
-              onNavigateToProfile={() => setCurrentView("profile")}
+              userName={profile.name || authUser?.name || "there"}
+              jobs={jobs}
+              onNavigateToProfile={() => handleNavigate("profile")}
               profileCompletePercent={
-                45 
-                + (isPhotoUploaded ? 5 : 0)
-                + (isAboutMeCompleted ? 30 : 0)
-                + (isCvUploaded ? 20 : 0)
+                45 +
+                (isPhotoUploaded ? 5 : 0) +
+                (isAboutMeCompleted ? 30 : 0) +
+                (isCvUploaded ? 20 : 0)
               }
               onSelectJob={(job) => {
                 setSelectedJobForDetails(job);
-                setCurrentView("job-details");
+                router.push(
+                  `/portal/job-details?jobId=${encodeURIComponent(job.id)}`,
+                );
               }}
-              onNavigateToNotifications={() => setCurrentView("notifications")}
+              onNavigateToNotifications={() => handleNavigate("notifications")}
             />
           </motion.div>
         )}
@@ -582,7 +978,7 @@ export default function App() {
             transition={{ duration: 0.25 }}
           >
             <ProfilePage
-              onBackToHome={() => setCurrentView("dashboard")}
+              onBackToHome={() => handleNavigate("dashboard")}
               profile={profile}
               setProfile={setProfile}
               isPhotoUploaded={isPhotoUploaded}
@@ -591,6 +987,8 @@ export default function App() {
               setIsCvUploaded={setIsCvUploaded}
               isAboutMeCompleted={isAboutMeCompleted}
               setIsAboutMeCompleted={setIsAboutMeCompleted}
+              photoUrl={profilePhotoUrl}
+              onPersistProfileUpdate={persistProfileUpdate}
               toast={triggerToast}
             />
           </motion.div>
@@ -606,7 +1004,7 @@ export default function App() {
             className="w-full"
           >
             <EmployerPortal
-              jobs={jobs}
+              jobs={customActiveJobs}
               onAddNewJob={handleAddNewJob}
               onDeleteJob={handleDeleteJob}
               onUpdateJob={handleUpdateJob}
@@ -616,9 +1014,17 @@ export default function App() {
               setNotifications={setNotifications}
               interviews={interviews}
               setInterviews={setInterviews}
-              onNavigate={setCurrentView}
+              onUpdateApplicationStatus={handleUpdateApplicationStatus}
+              onNavigate={handleNavigate}
               onLogOutEmployer={() => {
-                setCurrentView("home");
+                clearStoredAuth();
+                setAuthToken(null);
+                setAuthUser(null);
+                setIsLoggedIn(false);
+                setProfile(DEFAULT_PROFILE);
+                setProfilePhotoUrl("");
+                setResumeUrl("");
+                handleNavigate("home");
               }}
             />
           </motion.div>
@@ -632,16 +1038,16 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.25 }}
           >
-            <JobDetailPage 
+            <JobDetailPage
               job={selectedJobForDetails}
               onBack={() => {
                 if (isLoggedIn) {
-                  setCurrentView("dashboard");
+                  handleNavigate("dashboard");
                 } else {
-                  setCurrentView("home");
+                  handleNavigate("home");
                 }
               }}
-              onNavigateToView={setCurrentView}
+              onNavigateToView={handleNavigate}
               applications={applications}
               onApplySubmit={handleJobDetailApplySubmit}
             />
@@ -656,15 +1062,15 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.25 }}
           >
-            <NotificationsPage 
+            <NotificationsPage
               onBack={() => {
                 if (isLoggedIn) {
-                  setCurrentView("dashboard");
+                  handleNavigate("dashboard");
                 } else {
-                  setCurrentView("home");
+                  handleNavigate("home");
                 }
               }}
-              onNavigateToView={setCurrentView}
+              onNavigateToView={handleNavigate}
             />
           </motion.div>
         )}
@@ -674,7 +1080,7 @@ export default function App() {
       <AnimatePresence>
         {homeApplyingJob && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -682,7 +1088,7 @@ export default function App() {
               className="absolute inset-0 bg-black/60 backdrop-blur-xs"
             />
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -701,9 +1107,16 @@ export default function App() {
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-5 animate-bounce">
                     <CheckCircle className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-black text-[#212230] tracking-tight">Application Transmitted!</h3>
+                  <h3 className="text-xl font-black text-[#212230] tracking-tight">
+                    Application Transmitted!
+                  </h3>
                   <p className="text-xs text-gray-400 mt-2 leading-relaxed px-2">
-                    Your resume has been successfully sent to <strong className="text-gray-900">{homeApplyingJob.company}</strong>. You can monitor your application timeline inside the <strong>Dashboard Portal</strong>.
+                    Your resume has been successfully sent to{" "}
+                    <strong className="text-gray-900">
+                      {homeApplyingJob.company}
+                    </strong>
+                    . You can monitor your application timeline inside the{" "}
+                    <strong>Dashboard Portal</strong>.
                   </p>
                 </div>
               ) : (
@@ -713,13 +1126,22 @@ export default function App() {
                       Join the team at {homeApplyingJob.company}
                     </h3>
                     <p className="text-xs text-gray-400 font-semibold">
-                      Applying for position: <span className="text-[#212230] font-bold">{homeApplyingJob.title}</span> ({homeApplyingJob.location})
+                      Applying for position:{" "}
+                      <span className="text-[#212230] font-bold">
+                        {homeApplyingJob.title}
+                      </span>{" "}
+                      ({homeApplyingJob.location})
                     </p>
                   </div>
 
-                  <form onSubmit={handleHomeApplySubmit} className="space-y-4 text-left">
+                  <form
+                    onSubmit={handleHomeApplySubmit}
+                    className="space-y-4 text-left"
+                  >
                     <div>
-                      <label className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold block mb-1">Full Name</label>
+                      <label className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold block mb-1">
+                        Full Name
+                      </label>
                       <input
                         type="text"
                         required
@@ -731,7 +1153,9 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold block mb-1">Email address</label>
+                      <label className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold block mb-1">
+                        Email address
+                      </label>
                       <input
                         type="email"
                         required
@@ -743,8 +1167,10 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold block mb-1">Resume / CV (Drag & Drop or click)</label>
-                      
+                      <label className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold block mb-1">
+                        Resume / CV (Drag & Drop or click)
+                      </label>
+
                       <div
                         onDragOver={(e) => {
                           e.preventDefault();
@@ -759,7 +1185,9 @@ export default function App() {
                           }
                         }}
                         className={`relative rounded-2xl border-2 border-dashed p-6 text-center transition-all cursor-pointer ${
-                          isDragging ? "border-[#212230] bg-gray-50 scale-[1.01]" : "border-gray-200 hover:border-gray-300 bg-white"
+                          isDragging
+                            ? "border-[#212230] bg-gray-50 scale-[1.01]"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
                         }`}
                       >
                         <input
@@ -772,18 +1200,29 @@ export default function App() {
                             }
                           }}
                         />
-                        <label htmlFor="apply-modal-file-picker" className="cursor-pointer block">
+                        <label
+                          htmlFor="apply-modal-file-picker"
+                          className="cursor-pointer block"
+                        >
                           {homeResumeName ? (
                             <div className="flex flex-col items-center justify-center py-2 animate-fade-in">
                               <CheckCircle className="w-8 h-8 text-emerald-500 mb-2" />
-                              <p className="text-xs font-bold text-gray-800 break-all">{homeResumeName}</p>
-                              <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest font-mono">Click to change resume file</p>
+                              <p className="text-xs font-bold text-gray-800 break-all">
+                                {homeResumeName}
+                              </p>
+                              <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest font-mono">
+                                Click to change resume file
+                              </p>
                             </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center py-2">
                               <Upload className="w-8 h-8 text-gray-400 mb-2 animate-pulse" />
-                              <p className="text-xs font-bold text-gray-750">Drag and drop CV here, or browse files</p>
-                              <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest font-mono">DOCX, PDF (MAX. 5MB)</p>
+                              <p className="text-xs font-bold text-gray-750">
+                                Drag and drop CV here, or browse files
+                              </p>
+                              <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest font-mono">
+                                DOCX, PDF (MAX. 5MB)
+                              </p>
                             </div>
                           )}
                         </label>
@@ -813,7 +1252,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-
       {/* Floating feedback alert */}
       <AnimatePresence>
         {toastMessage && (
@@ -825,10 +1263,12 @@ export default function App() {
             className="fixed bottom-6 right-6 z-50 bg-[#212230] text-white p-4.5 px-6 rounded-2xl shadow-2xl border border-gray-800 flex items-center gap-3"
           >
             <div className="w-5 h-5 bg-emerald-500 rounded-lg flex items-center justify-center text-white shrink-0">
-               <CheckCircle className="w-3.5 h-3.5 stroke-[3.5]" />
+              <CheckCircle className="w-3.5 h-3.5 stroke-[3.5]" />
             </div>
-            <span className="text-xs font-bold leading-normal tracking-tight">{toastMessage}</span>
-            <button 
+            <span className="text-xs font-bold leading-normal tracking-tight">
+              {toastMessage}
+            </span>
+            <button
               onClick={() => setToastMessage(null)}
               className="ml-3 text-[10px] font-bold text-gray-400 hover:text-white uppercase transition-colors border-0 bg-transparent p-0 cursor-pointer"
             >
@@ -837,10 +1277,6 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Backend Team API Integration Console */}
-      <BackendSandbox />
-
     </div>
   );
 }

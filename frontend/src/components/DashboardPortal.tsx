@@ -1,24 +1,25 @@
 import React, { useState } from "react";
-import { 
-  Briefcase, 
-  User, 
-  FileText, 
-  CheckCircle2, 
-  ArrowRight, 
-  Calendar, 
-  Settings, 
-  Mail, 
-  Trash2, 
-  Plus, 
-  ChevronLeft, 
-  ChevronRight, 
-  MapPin, 
+import {
+  Briefcase,
+  User,
+  FileText,
+  CheckCircle2,
+  ArrowRight,
+  Calendar,
+  Settings,
+  Mail,
+  Trash2,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
   Sparkles,
   Home,
   Check,
   Search,
-  DollarSign
+  DollarSign,
 } from "lucide-react";
+import type { Job } from "../types";
 import { INITIAL_JOBS, CATEGORIES } from "../data/jobData";
 
 interface RecommendedJob {
@@ -59,13 +60,26 @@ interface DashboardNotification {
 
 interface DashboardPortalProps {
   notifications?: DashboardNotification[];
-  setNotifications?: React.Dispatch<React.SetStateAction<DashboardNotification[]>>;
+  setNotifications?: React.Dispatch<
+    React.SetStateAction<DashboardNotification[]>
+  >;
   interviews?: Interview[];
   setInterviews?: React.Dispatch<React.SetStateAction<Interview[]>>;
   onNavigateToProfile?: () => void;
   profileCompletePercent?: number;
   onSelectJob?: (job: any) => void;
   onNavigateToNotifications?: () => void;
+  userName?: string;
+  jobs?: Job[];
+  recommendedJobs?: RecommendedJob[];
+  savedJobs?: SavedJob[];
+  onToggleSavedJob?: (job: Job, shouldSave: boolean) => Promise<void> | void;
+  onCreateInterview?: (interview: Interview) => Promise<void> | void;
+  onDeleteInterview?: (interviewId: string) => Promise<void> | void;
+  onToggleInterviewCompleted?: (
+    interviewId: string,
+    completed: boolean,
+  ) => Promise<void> | void;
 }
 
 export default function DashboardPortal({
@@ -76,17 +90,29 @@ export default function DashboardPortal({
   onNavigateToProfile,
   profileCompletePercent = 30,
   onSelectJob,
-  onNavigateToNotifications
+  onNavigateToNotifications,
+  userName = "there",
+  jobs = INITIAL_JOBS,
+  recommendedJobs: propsRecommendedJobs,
+  savedJobs: propsSavedJobs,
+  onToggleSavedJob,
+  onCreateInterview,
+  onDeleteInterview,
+  onToggleInterviewCompleted,
 }: DashboardPortalProps = {}) {
-  const [notifTimeTab, setNotifTimeTab] = useState<"today" | "week" | "month">("today");
+  const [notifTimeTab, setNotifTimeTab] = useState<"today" | "week" | "month">(
+    "today",
+  );
   const [dbSearchQuery, setDbSearchQuery] = useState("");
   const [portalSearchQuery, setPortalSearchQuery] = useState("");
   const [portalLocationQuery, setPortalLocationQuery] = useState("");
   const [portalCategory, setPortalCategory] = useState("all");
   const [portalExperience, setPortalExperience] = useState("all");
-  
+
   // Dynamic state for Recommended jobs (No strokes!)
-  const [recommendedJobs, setRecommendedJobs] = useState<RecommendedJob[]>([
+  const [localRecommendedJobs, setLocalRecommendedJobs] = useState<
+    RecommendedJob[]
+  >([
     {
       id: "rec-1",
       title: "Product Design Lead",
@@ -94,7 +120,7 @@ export default function DashboardPortal({
       location: "London (Remote)",
       type: "Full-time",
       salary: "$120k - $150k",
-      saved: true
+      saved: true,
     },
     {
       id: "rec-2",
@@ -103,7 +129,7 @@ export default function DashboardPortal({
       location: "New York",
       type: "Hybrid",
       salary: "$140k - $170k",
-      saved: false
+      saved: false,
     },
     {
       id: "rec-3",
@@ -112,7 +138,7 @@ export default function DashboardPortal({
       location: "Berlin",
       type: "Remote",
       salary: "$90k - $115k",
-      saved: true
+      saved: true,
     },
     {
       id: "rec-4",
@@ -121,24 +147,24 @@ export default function DashboardPortal({
       location: "San Francisco",
       type: "Full-time",
       salary: "$160k - $190k",
-      saved: false
-    }
+      saved: false,
+    },
   ]);
 
   // Dynamic state for Recently Saved (No strokes!)
-  const [savedJobs, setSavedJobs] = useState<SavedJob[]>([
+  const [localSavedJobs, setLocalSavedJobs] = useState<SavedJob[]>([
     {
       id: "save-1",
       title: "Principal Designer",
       company: "Adobe",
-      location: "San Jose"
+      location: "San Jose",
     },
     {
       id: "save-2",
       title: "Senior Creative Lead",
       company: "Figma",
-      location: "San Francisco"
-    }
+      location: "San Francisco",
+    },
   ]);
 
   // Toast message simulation
@@ -169,16 +195,17 @@ export default function DashboardPortal({
       description: "Technical Round 2 layout design system challenge",
       date: "2024-10-15",
       time: "10:30 AM",
-      completed: false
+      completed: false,
     },
     {
       id: "int-2",
       title: "HR Dialogue Discussion",
       company: "MetaCore",
-      description: "HR credentials, matching expectation and profile walkthrough",
+      description:
+        "HR credentials, matching expectation and profile walkthrough",
       date: "2024-10-16",
       time: "2:00 PM",
-      completed: false
+      completed: false,
     },
     {
       id: "int-3",
@@ -187,18 +214,23 @@ export default function DashboardPortal({
       description: "Case-study presentation of system layouts built recently",
       date: "2024-10-18",
       time: "1:00 PM",
-      completed: true
-    }
+      completed: true,
+    },
   ]);
 
-  const interviews = propsInterviews !== undefined ? propsInterviews : localInterviews;
-  const setInterviews = propsSetInterviews !== undefined ? propsSetInterviews : setLocalInterviews;
+  const interviews =
+    propsInterviews !== undefined ? propsInterviews : localInterviews;
+  const setInterviews =
+    propsSetInterviews !== undefined ? propsSetInterviews : setLocalInterviews;
+  const recommendedJobs = propsRecommendedJobs ?? localRecommendedJobs;
+  const savedJobs = propsSavedJobs ?? localSavedJobs;
 
   // Calendar States
   const [selectedDay, setSelectedDay] = useState("2024-10-14");
   const calendarDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
-  const [isInterviewsListModalOpen, setIsInterviewsListModalOpen] = useState(false);
+  const [isInterviewsListModalOpen, setIsInterviewsListModalOpen] =
+    useState(false);
   const [isAddInterviewModalOpen, setIsAddInterviewModalOpen] = useState(false);
 
   // Add Interview Form fields
@@ -208,37 +240,35 @@ export default function DashboardPortal({
   const [newIntTime, setNewIntTime] = useState("");
   const [newIntDesc, setNewIntDesc] = useState("");
 
-  const handleToggleInterviewCompleted = (id: string) => {
-    setInterviews(prevInterviews => prevInterviews.map((int) => {
-      if (int.id === id) {
-        const nextCompleted = !int.completed;
-        
-        // Notify when marked completed / ticked
-        if (nextCompleted) {
-          triggerToast(`Completed interview with ${int.company}!`);
-          
-          // Send system notification
-          const notifId = `n-${Date.now()}`;
-          const newNotif: DashboardNotification = {
-            id: notifId,
-            company: int.company,
-            status: `Completed Interview successfully: ${int.title}`,
-            time: "Just now",
-            logoType: "calendar",
-            tab: "today"
-          };
-          setNotifications(prevNotifs => [newNotif, ...prevNotifs]);
-        } else {
-          triggerToast(`Interview with ${int.company} marked incomplete.`);
-        }
-        
-        return { ...int, completed: nextCompleted };
-      }
-      return int;
-    }));
+  const handleToggleInterviewCompleted = async (id: string) => {
+    const targetInterview = interviews.find((interview) => interview.id === id);
+    if (!targetInterview) return;
+
+    const nextCompleted = !targetInterview.completed;
+
+    if (onToggleInterviewCompleted) {
+      await onToggleInterviewCompleted(id, nextCompleted);
+    } else {
+      setInterviews((prevInterviews) =>
+        prevInterviews.map((int) => {
+          if (int.id === id) {
+            return { ...int, completed: nextCompleted };
+          }
+          return int;
+        }),
+      );
+    }
+
+    if (nextCompleted) {
+      triggerToast(`Completed interview with ${targetInterview.company}!`);
+    } else {
+      triggerToast(
+        `Interview with ${targetInterview.company} marked incomplete.`,
+      );
+    }
   };
 
-  const handleCreateInterview = (e: React.FormEvent) => {
+  const handleCreateInterview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIntCompany || !newIntRole || !newIntTime) return;
 
@@ -249,26 +279,17 @@ export default function DashboardPortal({
       description: newIntDesc || "Scheduled Interview session",
       date: newIntDate,
       time: newIntTime,
-      completed: false
+      completed: false,
     };
 
-    setInterviews(prev => [...prev, newInt]);
-    
-    // Trigger toast
+    if (onCreateInterview) {
+      await onCreateInterview(newInt);
+    } else {
+      setInterviews((prev) => [...prev, newInt]);
+    }
+
     triggerToast(`Interview scheduled with ${newIntCompany}!`);
 
-    // System sends dynamic status notification
-    const newNotif: DashboardNotification = {
-      id: `n-${Date.now()}`,
-      company: newIntCompany,
-      status: `Scheduled Interview: ${newIntRole} for ${newIntTime}`,
-      time: "Today",
-      logoType: "calendar",
-      tab: "today"
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-
-    // Reset fields & close modal
     setNewIntCompany("");
     setNewIntRole("");
     setNewIntTime("");
@@ -276,20 +297,26 @@ export default function DashboardPortal({
     setIsAddInterviewModalOpen(false);
   };
 
-  const handleDeleteInterview = (id: string, company: string) => {
-    setInterviews(prev => prev.filter(i => i.id !== id));
+  const handleDeleteInterview = async (id: string, company: string) => {
+    if (onDeleteInterview) {
+      await onDeleteInterview(id);
+    } else {
+      setInterviews((prev) => prev.filter((i) => i.id !== id));
+    }
     triggerToast(`Interview with ${company} deleted.`);
   };
 
   // Dynamic state for Notifications
-  const [localNotifications, setLocalNotifications] = useState<DashboardNotification[]>([
+  const [localNotifications, setLocalNotifications] = useState<
+    DashboardNotification[]
+  >([
     {
       id: "n-1",
       company: "CloudNest Systems",
       status: "Your application has been rejected",
       time: "10:55am 22nd April",
       logoType: "x",
-      tab: "today"
+      tab: "today",
     },
     {
       id: "n-2",
@@ -297,7 +324,7 @@ export default function DashboardPortal({
       status: "Your application is under review",
       time: "10:55am 22nd April",
       logoType: "car",
-      tab: "today"
+      tab: "today",
     },
     {
       id: "n-3",
@@ -305,7 +332,7 @@ export default function DashboardPortal({
       status: "Your application has moved to the next step",
       time: "10:55am 22nd April",
       logoType: "spotify",
-      tab: "today"
+      tab: "today",
     },
     {
       id: "n-4",
@@ -313,7 +340,7 @@ export default function DashboardPortal({
       status: "Your application is under review",
       time: "10:55am 22nd April",
       logoType: "x",
-      tab: "today"
+      tab: "today",
     },
     {
       id: "n-5",
@@ -321,7 +348,7 @@ export default function DashboardPortal({
       status: "Your application is under review",
       time: "10:55am 22nd April",
       logoType: "spotify",
-      tab: "today"
+      tab: "today",
     },
     {
       id: "n-w-1",
@@ -329,7 +356,7 @@ export default function DashboardPortal({
       status: "Your application has moved to final round",
       time: "11:20am 18th April",
       logoType: "car",
-      tab: "week"
+      tab: "week",
     },
     {
       id: "n-w-2",
@@ -337,7 +364,7 @@ export default function DashboardPortal({
       status: "Application received. Verification pending.",
       time: "09:40am 15th April",
       logoType: "spotify",
-      tab: "week"
+      tab: "week",
     },
     {
       id: "n-m-1",
@@ -345,82 +372,120 @@ export default function DashboardPortal({
       status: "Your resume hash has been securely persisted in registry.",
       time: "04:15pm 10th April",
       logoType: "spotify",
-      tab: "month"
-    }
+      tab: "month",
+    },
   ]);
 
-  const notifications = propsNotifications !== undefined ? propsNotifications : localNotifications;
-  const setNotifications = propsSetNotifications !== undefined ? propsSetNotifications : setLocalNotifications;
+  const notifications =
+    propsNotifications !== undefined ? propsNotifications : localNotifications;
+  const setNotifications =
+    propsSetNotifications !== undefined
+      ? propsSetNotifications
+      : setLocalNotifications;
 
-  const handleDeleteSaved = (id: string, name: string) => {
-    setSavedJobs(savedJobs.filter(j => j.id !== id));
+  const handleDeleteSaved = async (id: string, name: string) => {
+    const jobToRemove = jobs.find((job) => job.id === id);
+    if (!jobToRemove) return;
+
+    if (onToggleSavedJob) {
+      await onToggleSavedJob(jobToRemove, false);
+    } else {
+      setLocalSavedJobs(localSavedJobs.filter((j) => j.id !== id));
+    }
     triggerToast(`Removed "${name}" from saved list.`);
   };
 
   const handleApplyNow = (jobTitle: string, company: string) => {
-    const foundJob = INITIAL_JOBS.find(j => j.title.toLowerCase() === jobTitle.toLowerCase()) || 
-                     INITIAL_JOBS[0];
+    const foundJob =
+      INITIAL_JOBS.find(
+        (j) => j.title.toLowerCase() === jobTitle.toLowerCase(),
+      ) || INITIAL_JOBS[0];
     if (onSelectJob) {
       onSelectJob(foundJob);
     } else {
-      triggerToast(`Authenticated as Alex. Initiated prompt for "${jobTitle}" at ${company}!`);
+      triggerToast(
+        `Authenticated as ${userName}. Initiated prompt for "${jobTitle}" at ${company}!`,
+      );
     }
   };
 
   const handlePostJob = (e: React.FormEvent) => {
     e.preventDefault();
     if (!postedTitle || !postedCompany) return;
-    
+
     triggerToast(`Successfully posted position: "${postedTitle}"!`);
     setIsPostingModalOpen(false);
-    
+
     // Reset Form
     setPostedTitle("");
     setPostedCompany("");
     setPostedSalary("");
   };
 
-  const handleToggleSaveRecommended = (id: string) => {
-    setRecommendedJobs(recommendedJobs.map(job => {
-      if (job.id === id) {
-        const updated = !job.saved;
-        if (updated) {
-          setSavedJobs([...savedJobs, { id, title: job.title, company: job.company, location: job.location }]);
-          triggerToast(`Saved "${job.title}" to portfolio.`);
-        } else {
-          setSavedJobs(savedJobs.filter(j => j.id !== id));
-          triggerToast(`Removed "${job.title}" from saved list.`);
-        }
-        return { ...job, saved: updated };
+  const handleToggleSaveRecommended = async (id: string) => {
+    const uiJob = recommendedJobs.find((job) => job.id === id);
+    const sourceJob = jobs.find((job) => job.id === id);
+    if (!uiJob || !sourceJob) return;
+
+    if (onToggleSavedJob) {
+      await onToggleSavedJob(sourceJob, !uiJob.saved);
+    } else {
+      setLocalRecommendedJobs(
+        localRecommendedJobs.map((job) =>
+          job.id === id ? { ...job, saved: !job.saved } : job,
+        ),
+      );
+      if (!uiJob.saved) {
+        setLocalSavedJobs([
+          ...localSavedJobs,
+          {
+            id,
+            title: uiJob.title,
+            company: uiJob.company,
+            location: uiJob.location,
+          },
+        ]);
+      } else {
+        setLocalSavedJobs(localSavedJobs.filter((job) => job.id !== id));
       }
-      return job;
-    }));
+    }
+
+    triggerToast(
+      !uiJob.saved
+        ? `Saved "${uiJob.title}" to portfolio.`
+        : `Removed "${uiJob.title}" from saved list.`,
+    );
   };
 
   // Get active items to render based on timeline tab selected
   const getActiveNotifications = () => {
-    return notifications.filter(n => n.tab === notifTimeTab);
+    return notifications.filter((n) => n.tab === notifTimeTab);
   };
 
   // Filter active jobs in portal based on typed queries, category, and experience
-  const filteredSearchedJobs = INITIAL_JOBS.filter((job) => {
-    const matchesKeyword = !portalSearchQuery.trim() || 
+  const filteredSearchedJobs = jobs.filter((job) => {
+    const matchesKeyword =
+      !portalSearchQuery.trim() ||
       job.title.toLowerCase().includes(portalSearchQuery.toLowerCase()) ||
       job.company.toLowerCase().includes(portalSearchQuery.toLowerCase()) ||
       job.description.toLowerCase().includes(portalSearchQuery.toLowerCase());
-    
-    const matchesLocation = !portalLocationQuery.trim() ||
+
+    const matchesLocation =
+      !portalLocationQuery.trim() ||
       job.location.toLowerCase().includes(portalLocationQuery.toLowerCase());
 
-    const matchesCategory = portalCategory === "all" || job.category === portalCategory;
-    const matchesExperience = portalExperience === "all" || job.experienceLevel === portalExperience;
-    
-    return matchesKeyword && matchesLocation && matchesCategory && matchesExperience;
+    const matchesCategory =
+      portalCategory === "all" || job.category === portalCategory;
+    const matchesExperience =
+      portalExperience === "all" || job.experienceLevel === portalExperience;
+
+    return (
+      matchesKeyword && matchesLocation && matchesCategory && matchesExperience
+    );
   });
 
   return (
     <div className="bg-[#f3f6fa] min-h-screen text-gray-900 pb-16 font-sans relative selection:bg-[#21222D]/10">
-      
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#21222D] text-gray-200 px-4 py-3 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 animate-fade-in">
@@ -431,30 +496,32 @@ export default function DashboardPortal({
 
       {/* Main Dashboard Layout container - Centered and Spaced (Recruiter Portal sidebar removed) */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 animate-fade-in">
-        
         {/* MAIN COLUMN CONTAINER */}
         <div className="space-y-6">
-          
           {/* Top Row Header Title + Stat Counters (Aligned Right) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">Welcome back, Alex</h1>
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                  Welcome back, {userName}
+                </h1>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">Here's what's happening with your job search today.</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Here&rsquo;s what&rsquo;s happening with your job search today.
+              </p>
             </div>
 
             {/* Stat Counters on the Right (Borders and strokes completely removed) */}
             <div className="flex items-center gap-3">
               {/* Interviews - Click to open Popup */}
-              <button 
+              <button
                 onClick={() => setIsInterviewsListModalOpen(true)}
                 className="bg-slate-200/65 hover:bg-slate-250/80 active:scale-98 transition-all px-5 py-2.5 rounded-xl text-center min-w-[110px] shadow-sm flex flex-col items-center justify-center cursor-pointer border-0"
                 title="Click to view interview list & tick off completed ones"
               >
                 <div className="text-lg font-black text-slate-800 tracking-tight leading-none flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-gray-500 shrink-0" />
-                  {interviews.filter(i => !i.completed).length}
+                  {interviews.filter((i) => !i.completed).length}
                 </div>
                 <div className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold mt-1">
                   Interviews
@@ -465,13 +532,13 @@ export default function DashboardPortal({
 
           {/* Split layout: Notifications Database Tab component (Left) + Interviews Calendar (Right) */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
             {/* Left Segment: Timeline Notification hub styled exactly like the provided screenshot (NO STROKES / BORDERS) */}
             <div className="md:col-span-7 bg-white rounded-2xl p-5 shadow-xs">
-              
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100 select-none">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-500">Notifications</h3>
-                <button 
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+                  Notifications
+                </h3>
+                <button
                   onClick={onNavigateToNotifications}
                   className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors bg-transparent border-0 cursor-pointer flex items-center gap-1"
                 >
@@ -482,7 +549,10 @@ export default function DashboardPortal({
               {/* Elegant capsule Tab switcher for temporal notifications (exactly like screenshot) */}
               <div className="bg-[#eaeaea]/70 rounded-2xl p-1.5 flex gap-1 items-center mb-6 select-none max-w-lg mx-auto">
                 <button
-                  onClick={() => { setNotifTimeTab("today"); triggerToast("Synced today's updates."); }}
+                  onClick={() => {
+                    setNotifTimeTab("today");
+                    triggerToast("Synced today's updates.");
+                  }}
                   className={`flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${
                     notifTimeTab === "today"
                       ? "bg-white text-slate-900 shadow-sm font-extrabold"
@@ -492,7 +562,10 @@ export default function DashboardPortal({
                   Today
                 </button>
                 <button
-                  onClick={() => { setNotifTimeTab("week"); triggerToast("Synced weekly activity."); }}
+                  onClick={() => {
+                    setNotifTimeTab("week");
+                    triggerToast("Synced weekly activity.");
+                  }}
                   className={`flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${
                     notifTimeTab === "week"
                       ? "bg-white text-slate-900 shadow-sm font-extrabold"
@@ -502,7 +575,10 @@ export default function DashboardPortal({
                   This week
                 </button>
                 <button
-                  onClick={() => { setNotifTimeTab("month"); triggerToast("Synced monthly logs."); }}
+                  onClick={() => {
+                    setNotifTimeTab("month");
+                    triggerToast("Synced monthly logs.");
+                  }}
                   className={`flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${
                     notifTimeTab === "month"
                       ? "bg-white text-slate-900 shadow-sm font-extrabold"
@@ -518,16 +594,19 @@ export default function DashboardPortal({
                 {getActiveNotifications().map((item, index) => {
                   const isFirst = index === 0;
                   const isLast = index === getActiveNotifications().length - 1;
-                  const lineStyle = isFirst 
-                    ? "top-1/2 bottom-0" 
-                    : isLast 
-                    ? "top-0 bottom-1/2" 
-                    : "top-0 bottom-0";
+                  const lineStyle = isFirst
+                    ? "top-1/2 bottom-0"
+                    : isLast
+                      ? "top-0 bottom-1/2"
+                      : "top-0 bottom-0";
 
                   return (
-                    <div key={item.id} className="flex items-center justify-between gap-4 relative">
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-4 relative"
+                    >
                       {/* Left Side Capsule Card with designated subtle grey colors */}
-                      <div 
+                      <div
                         onClick={onNavigateToNotifications}
                         className="flex-1 bg-[#efeff1] rounded-2xl p-4.5 flex items-center justify-between transition-all hover:bg-slate-200/90 cursor-pointer min-h-[72px]"
                       >
@@ -541,14 +620,22 @@ export default function DashboardPortal({
                             )}
                             {item.logoType === "car" && (
                               <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
-                                <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
+                                <svg
+                                  className="w-4.5 h-4.5"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
                                   <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
                                 </svg>
                               </div>
                             )}
                             {item.logoType === "spotify" && (
                               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                                <svg className="w-4.5 h-4.5 text-slate-500" fill="currentColor" viewBox="0 0 24 24">
+                                <svg
+                                  className="w-4.5 h-4.5 text-slate-500"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
                                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.58 14.42c-.2.32-.61.42-.93.22-2.5-1.53-5.65-1.88-9.35-1.03-.36.08-.72-.14-.8-.5-.08-.36.14-.72.5-.8 4.05-.93 7.54-.53 10.36 1.2.32.2.42.61.22.91zm1.22-2.73c-.25.4-.77.53-1.16.28-2.86-1.76-7.22-2.26-10.6-1.24-.45.13-.91-.12-1.05-.57-.13-.45.12-.91.57-1.05 3.86-1.17 8.68-.61 11.96 1.41.4.24.52.77.28 1.17zm.1-2.91C14.47 8.32 8.7 8.13 5.37 9.14c-.54.16-1.1-.14-1.26-.68-.16-.54.14-1.1.68-1.26 3.85-1.17 10.22-.95 14.18 1.4.49.29.65.93.36 1.42-.29.48-.93.65-1.43.36z" />
                                 </svg>
                               </div>
@@ -575,11 +662,13 @@ export default function DashboardPortal({
                       {/* Right Timeline Node (hollow circle aligned to the line) */}
                       <div className="w-[145px] shrink-0 flex items-center gap-3 relative min-h-[72px] pl-2 select-none">
                         {/* Dynamic connection segment of the vertical timeline */}
-                        <div className={`absolute left-[14px] w-[1px] bg-gray-300 ${lineStyle}`} />
-                        
+                        <div
+                          className={`absolute left-[14px] w-[1px] bg-gray-300 ${lineStyle}`}
+                        />
+
                         {/* Central Ring bullet */}
                         <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-400 bg-white z-10 shrink-0" />
-                        
+
                         {/* Signature Date stamp */}
                         <span className="text-[10px] text-gray-400 font-mono font-bold whitespace-nowrap pl-0.5">
                           {item.time}
@@ -596,10 +685,14 @@ export default function DashboardPortal({
               <div>
                 <div className="flex items-center justify-between mb-3 select-none">
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Calendar</h3>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest font-mono mt-0.5">October 2024</p>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                      Calendar
+                    </h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest font-mono mt-0.5">
+                      October 2024
+                    </p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       setNewIntDate(selectedDay);
                       setIsAddInterviewModalOpen(true);
@@ -626,7 +719,9 @@ export default function DashboardPortal({
                   {calendarDays.map((dayNum) => {
                     const dateStr = `2024-10-${String(dayNum).padStart(2, "0")}`;
                     const isSelected = selectedDay === dateStr;
-                    const dayInterviews = interviews.filter(i => i.date === dateStr);
+                    const dayInterviews = interviews.filter(
+                      (i) => i.date === dateStr,
+                    );
                     const hasInterviews = dayInterviews.length > 0;
 
                     return (
@@ -634,24 +729,26 @@ export default function DashboardPortal({
                         key={dayNum}
                         onClick={() => setSelectedDay(dateStr)}
                         className={`aspect-square w-full flex flex-col items-center justify-center hover:bg-slate-100 rounded-full font-black text-[10px] relative transition-all duration-150 cursor-pointer border-0 ${
-                          isSelected 
-                            ? "bg-[#21222D] text-white hover:bg-[#21222D]" 
+                          isSelected
+                            ? "bg-[#21222D] text-white hover:bg-[#21222D]"
                             : "text-slate-800"
                         }`}
                       >
-                        <span className={hasInterviews ? "-mt-1 block" : ""}>{dayNum}</span>
+                        <span className={hasInterviews ? "-mt-1 block" : ""}>
+                          {dayNum}
+                        </span>
                         {hasInterviews && (
                           <div className="absolute bottom-1 flex gap-0.5 justify-center">
                             {dayInterviews.slice(0, 3).map((item) => (
-                              <span 
-                                key={item.id} 
+                              <span
+                                key={item.id}
                                 className={`w-1 h-1 rounded-full ${
-                                  isSelected 
-                                    ? "bg-[#21222D]" 
-                                    : item.completed 
-                                      ? "bg-slate-350" 
+                                  isSelected
+                                    ? "bg-[#21222D]"
+                                    : item.completed
+                                      ? "bg-slate-350"
                                       : "bg-gray-400"
-                                }`} 
+                                }`}
                                 title={item.title}
                               />
                             ))}
@@ -670,14 +767,18 @@ export default function DashboardPortal({
                     Schedule: Oct {parseInt(selectedDay.split("-")[2], 10)}
                   </span>
                   <span className="text-[9.5px] text-gray-400 font-mono font-bold">
-                    {interviews.filter(i => i.date === selectedDay).length} match
+                    {interviews.filter((i) => i.date === selectedDay).length}{" "}
+                    match
                   </span>
                 </div>
 
-                {interviews.filter(i => i.date === selectedDay).length === 0 ? (
+                {interviews.filter((i) => i.date === selectedDay).length ===
+                0 ? (
                   <div className="py-6 text-center bg-gray-50/70 rounded-2xl">
-                    <p className="text-[10px] text-gray-405 font-mono font-bold">No interviews this day</p>
-                    <button 
+                    <p className="text-[10px] text-gray-405 font-mono font-bold">
+                      No interviews this day
+                    </p>
+                    <button
                       onClick={() => {
                         setNewIntDate(selectedDay);
                         setIsAddInterviewModalOpen(true);
@@ -689,37 +790,56 @@ export default function DashboardPortal({
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
-                    {interviews.filter(i => i.date === selectedDay).map((item) => (
-                      <div 
-                        key={item.id} 
-                        className={`p-2.5 rounded-xl transition-all leading-tight text-[11px] ${
-                          item.completed 
-                            ? "bg-slate-100/60 opacity-60 ml-1 border-l-2 border-slate-300"
-                            : "bg-gray-105 border-l-4 border-gray-400"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[8.5px] font-mono font-black uppercase tracking-wider ${
-                            item.completed ? "text-gray-400 line-through" : "text-gray-600"
-                          }`}>
-                            {item.time} {item.completed ? "(Done)" : "(Scheduled)"}
-                          </span>
-                          <button
-                            onClick={() => handleToggleInterviewCompleted(item.id)}
-                            className={`p-0.5 rounded transition-all cursor-pointer bg-transparent border-0 ${
-                              item.completed ? "text-gray-400 hover:text-slate-800" : "text-gray-600 hover:text-gray-800"
-                            }`}
-                            title={item.completed ? "Mark pending" : "Tick as completed"}
+                    {interviews
+                      .filter((i) => i.date === selectedDay)
+                      .map((item) => (
+                        <div
+                          key={item.id}
+                          className={`p-2.5 rounded-xl transition-all leading-tight text-[11px] ${
+                            item.completed
+                              ? "bg-slate-100/60 opacity-60 ml-1 border-l-2 border-slate-300"
+                              : "bg-gray-105 border-l-4 border-gray-400"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-[8.5px] font-mono font-black uppercase tracking-wider ${
+                                item.completed
+                                  ? "text-gray-400 line-through"
+                                  : "text-gray-600"
+                              }`}
+                            >
+                              {item.time}{" "}
+                              {item.completed ? "(Done)" : "(Scheduled)"}
+                            </span>
+                            <button
+                              onClick={() =>
+                                handleToggleInterviewCompleted(item.id)
+                              }
+                              className={`p-0.5 rounded transition-all cursor-pointer bg-transparent border-0 ${
+                                item.completed
+                                  ? "text-gray-400 hover:text-slate-800"
+                                  : "text-gray-600 hover:text-gray-800"
+                              }`}
+                              title={
+                                item.completed
+                                  ? "Mark pending"
+                                  : "Tick as completed"
+                              }
+                            >
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </button>
+                          </div>
+                          <h4
+                            className={`text-xs font-black text-gray-900 mt-1 ${item.completed ? "line-through text-gray-450" : ""}`}
                           >
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          </button>
+                            {item.title}
+                          </h4>
+                          <p className="text-[9.5px] text-gray-500 mt-0.5">
+                            {item.description}
+                          </p>
                         </div>
-                        <h4 className={`text-xs font-black text-gray-900 mt-1 ${item.completed ? "line-through text-gray-450" : ""}`}>
-                          {item.title}
-                        </h4>
-                        <p className="text-[9.5px] text-gray-500 mt-0.5">{item.description}</p>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </div>
@@ -731,9 +851,14 @@ export default function DashboardPortal({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 select-none">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#21222D]" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900">Career Controls & Discovery</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900">
+                  Career Controls & Discovery
+                </h3>
               </div>
-              {(portalSearchQuery || portalLocationQuery || portalCategory !== "all" || portalExperience !== "all") && (
+              {(portalSearchQuery ||
+                portalLocationQuery ||
+                portalCategory !== "all" ||
+                portalExperience !== "all") && (
                 <button
                   onClick={() => {
                     setPortalSearchQuery("");
@@ -753,11 +878,13 @@ export default function DashboardPortal({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {/* Keyword Search */}
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">Search Keywords</label>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">
+                  Search Keywords
+                </label>
                 <div className="relative bg-[#f0f1f4] rounded-xl flex items-center px-3 py-2">
                   <Search className="w-4 h-4 text-gray-400 shrink-0 pointer-events-none mr-2" />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={portalSearchQuery}
                     onChange={(e) => setPortalSearchQuery(e.target.value)}
                     placeholder="Title, skills, company..."
@@ -769,11 +896,13 @@ export default function DashboardPortal({
 
               {/* Location Search */}
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">Location Field</label>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">
+                  Location Field
+                </label>
                 <div className="relative bg-[#f0f1f4] rounded-xl flex items-center px-3 py-2">
                   <MapPin className="w-4 h-4 text-gray-450 shrink-0 pointer-events-none mr-2" />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={portalLocationQuery}
                     onChange={(e) => setPortalLocationQuery(e.target.value)}
                     placeholder="e.g. Remote, US"
@@ -785,7 +914,9 @@ export default function DashboardPortal({
 
               {/* Category Dropdown */}
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">Category Field</label>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">
+                  Category Field
+                </label>
                 <div className="relative bg-[#f0f1f4] rounded-xl flex items-center px-3 py-1.5">
                   <select
                     value={portalCategory}
@@ -793,7 +924,9 @@ export default function DashboardPortal({
                     className="w-full text-xs font-semibold focus:outline-none bg-transparent text-gray-800 border-0 cursor-pointer h-7"
                     id="dashboard-job-category"
                   >
-                    <option value="all">All Categories ({CATEGORIES.length})</option>
+                    <option value="all">
+                      All Categories ({CATEGORIES.length})
+                    </option>
                     {CATEGORIES.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
@@ -805,7 +938,9 @@ export default function DashboardPortal({
 
               {/* Experience Dropdown */}
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">Experience level</label>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-extrabold select-none">
+                  Experience level
+                </label>
                 <div className="relative bg-[#f0f1f4] rounded-xl flex items-center px-3 py-1.5">
                   <select
                     value={portalExperience}
@@ -826,19 +961,23 @@ export default function DashboardPortal({
             <div className="space-y-3 animate-fade-in">
               <div className="flex items-center justify-between pb-1 border-b border-gray-100">
                 <h4 className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                  Live Matched Vacancies ({filteredSearchedJobs.length} active in pool)
+                  Live Matched Vacancies ({filteredSearchedJobs.length} active
+                  in pool)
                 </h4>
               </div>
 
               {filteredSearchedJobs.length === 0 ? (
                 <div className="text-center py-10 bg-[#f5f6f8] rounded-2xl">
-                  <p className="text-xs text-gray-400 font-mono font-bold">No vacancies fit your selected filters. Try adjusting your constraints.</p>
+                  <p className="text-xs text-gray-400 font-mono font-bold">
+                    No vacancies fit your selected filters. Try adjusting your
+                    constraints.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[380px] overflow-y-auto pr-1">
                   {filteredSearchedJobs.map((job) => (
-                    <div 
-                      key={job.id} 
+                    <div
+                      key={job.id}
                       className="bg-white p-5 rounded-3xl border border-gray-150 hover:border-gray-250 hover:shadow-md transition-all flex flex-col justify-between text-left"
                     >
                       <div>
@@ -849,11 +988,15 @@ export default function DashboardPortal({
                               {job.company.substring(0, 1)}
                             </div>
                             <div>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{job.company}</p>
-                              <span className="text-[9px] text-[#21222D]/60 font-semibold">{job.location}</span>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                {job.company}
+                              </p>
+                              <span className="text-[9px] text-[#21222D]/60 font-semibold">
+                                {job.location}
+                              </span>
                             </div>
                           </div>
-                          
+
                           <span className="text-[9px] bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded-full font-mono">
                             {job.type}
                           </span>
@@ -870,13 +1013,15 @@ export default function DashboardPortal({
 
                       <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
                         <div>
-                          <span className="text-[8px] text-gray-400 font-bold block uppercase tracking-wider">Salary</span>
+                          <span className="text-[8px] text-gray-400 font-bold block uppercase tracking-wider">
+                            Salary
+                          </span>
                           <p className="text-xs font-extrabold text-gray-950 font-mono">
                             {job.salary}
                           </p>
                         </div>
 
-                        <button 
+                        <button
                           onClick={() => handleApplyNow(job.title, job.company)}
                           className="px-3.5 py-2 bg-[#21222D] hover:bg-slate-800 text-white text-[10px] font-bold rounded-xl transition-colors cursor-pointer border-0"
                         >
@@ -894,13 +1039,17 @@ export default function DashboardPortal({
           <div className="bg-white rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between mb-4 select-none">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Recommended for You</h3>
-                <p className="text-[10px] text-gray-405 mt-0.5">Based on your Senior Designer profile matching ratios</p>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Recommended for You
+                </h3>
+                <p className="text-[10px] text-gray-405 mt-0.5">
+                  Based on your Senior Designer profile matching ratios
+                </p>
               </div>
 
               {/* Custom arrow sliders */}
               <div className="flex items-center gap-1.5">
-                <button 
+                <button
                   onClick={() => {
                     if (carouselIndex > 0) setCarouselIndex(carouselIndex - 1);
                     triggerToast("Slided Recommended list left.");
@@ -911,13 +1060,16 @@ export default function DashboardPortal({
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <button 
+                <button
                   onClick={() => {
-                    if (carouselIndex < recommendedJobs.length - 3) setCarouselIndex(carouselIndex + 1);
+                    if (carouselIndex < recommendedJobs.length - 3)
+                      setCarouselIndex(carouselIndex + 1);
                     triggerToast("Slided Recommended list right.");
                   }}
                   className={`w-7 h-7 rounded-lg hover:bg-gray-50 flex items-center justify-center text-gray-500 cursor-pointer ${
-                    carouselIndex >= recommendedJobs.length - 3 ? "opacity-40 cursor-not-allowed" : ""
+                    carouselIndex >= recommendedJobs.length - 3
+                      ? "opacity-40 cursor-not-allowed"
+                      : ""
                   }`}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -927,103 +1079,142 @@ export default function DashboardPortal({
 
             {/* Layout Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {recommendedJobs.slice(carouselIndex, carouselIndex + 3).map((job) => (
-                <div 
-                  key={job.id} 
-                  className="bg-white p-5 rounded-3xl hover:shadow-lg transition-all duration-300 flex flex-col justify-between text-left"
-                >
-                  <div>
-                    {/* Header info */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm bg-indigo-50 text-[#21222D]">
-                          {job.company.substring(0, 1)}
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{job.company}</p>
-                          <span className="text-[10px] text-[#21222D] font-bold font-mono">⚡ {job.id === "rec-1" ? "12" : job.id === "rec-2" ? "8" : "15"} applied</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        {/* Save Bookmark button */}
-                        <button 
-                          onClick={() => handleToggleSaveRecommended(job.id)}
-                          className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                            job.saved ? "text-amber-500 bg-amber-50" : "text-gray-400 hover:text-gray-900"
-                          }`}
-                        >
-                          <svg className="w-3.5 h-3.5" fill={job.saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-                          </svg>
-                        </button>
-                        <span className="text-[9px] bg-slate-100 text-slate-800 font-bold px-1.5 py-0.5 rounded-full font-mono">
-                          {job.type}
-                        </span>
-                      </div>
-                    </div>
-
-                    <h3 className="text-sm font-extrabold text-[#21222D] tracking-tight hover:text-indigo-600 cursor-pointer mb-2">
-                      {job.title}
-                    </h3>
-
-                    <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-2">
-                      Join {job.company} as a {job.title} in {job.location}! Refine layout systems and shape high-end interface designs.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+              {recommendedJobs
+                .slice(carouselIndex, carouselIndex + 3)
+                .map((job) => (
+                  <div
+                    key={job.id}
+                    className="bg-white p-5 rounded-3xl hover:shadow-lg transition-all duration-300 flex flex-col justify-between text-left"
+                  >
                     <div>
-                      <span className="text-[9px] text-gray-400 font-bold block uppercase tracking-wider">Salary Package</span>
-                      <p className="text-sm font-extrabold text-gray-900 font-mono flex items-center">
-                        <DollarSign className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                        {job.salary}
+                      {/* Header info */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm bg-indigo-50 text-[#21222D]">
+                            {job.company.substring(0, 1)}
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              {job.company}
+                            </p>
+                            <span className="text-[10px] text-[#21222D] font-bold font-mono">
+                              ⚡{" "}
+                              {job.id === "rec-1"
+                                ? "12"
+                                : job.id === "rec-2"
+                                  ? "8"
+                                  : "15"}{" "}
+                              applied
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          {/* Save Bookmark button */}
+                          <button
+                            onClick={() => handleToggleSaveRecommended(job.id)}
+                            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                              job.saved
+                                ? "text-amber-500 bg-amber-50"
+                                : "text-gray-400 hover:text-gray-900"
+                            }`}
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill={job.saved ? "currentColor" : "none"}
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
+                              />
+                            </svg>
+                          </button>
+                          <span className="text-[9px] bg-slate-100 text-slate-800 font-bold px-1.5 py-0.5 rounded-full font-mono">
+                            {job.type}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3 className="text-sm font-extrabold text-[#21222D] tracking-tight hover:text-indigo-600 cursor-pointer mb-2">
+                        {job.title}
+                      </h3>
+
+                      <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-2">
+                        Join {job.company} as a {job.title} in {job.location}!
+                        Refine layout systems and shape high-end interface
+                        designs.
                       </p>
                     </div>
 
-                    {job.id === "rec-2" ? (
-                      <button 
-                        onClick={() => triggerToast(`Parsing specification details for UX Architect role...`)}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
-                      >
-                        Details
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleApplyNow(job.title, job.company)}
-                        className="px-4 py-2 bg-[#21222D] hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
-                      >
-                        Apply Now
-                      </button>
-                    )}
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] text-gray-400 font-bold block uppercase tracking-wider">
+                          Salary Package
+                        </span>
+                        <p className="text-sm font-extrabold text-gray-900 font-mono flex items-center">
+                          <DollarSign className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                          {job.salary}
+                        </p>
+                      </div>
+
+                      {job.id === "rec-2" ? (
+                        <button
+                          onClick={() =>
+                            triggerToast(
+                              `Parsing specification details for UX Architect role...`,
+                            )
+                          }
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
+                        >
+                          Details
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleApplyNow(job.title, job.company)}
+                          className="px-4 py-2 bg-[#21222D] hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                        >
+                          Apply Now
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 
           {/* Sub column elements: Recently Saved (Left bottom) + Profile Strength (Right bottom) (NO STROKES!) */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
             {/* Left Column: Recently Saved list */}
             <div className="md:col-span-7 bg-white rounded-2xl p-5 shadow-xs text-left">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 pb-1">Recently Saved</h3>
-              
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 pb-1">
+                Recently Saved
+              </h3>
+
               {savedJobs.length === 0 ? (
-                <p className="text-xs text-gray-400 py-3 text-center font-mono">No bookmarks left. Browse recommended jobs above to add more!</p>
+                <p className="text-xs text-gray-400 py-3 text-center font-mono">
+                  No bookmarks left. Browse recommended jobs above to add more!
+                </p>
               ) : (
                 <div className="space-y-3">
                   {savedJobs.map((job) => (
-                    <div 
-                      key={job.id} 
+                    <div
+                      key={job.id}
                       className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50/50 hover:bg-gray-100/60 transition-all"
                     >
                       <div>
-                        <h4 className="text-xs font-bold text-gray-950 leading-tight">{job.title}</h4>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{job.company} • {job.location}</p>
+                        <h4 className="text-xs font-bold text-gray-950 leading-tight">
+                          {job.title}
+                        </h4>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {job.company} • {job.location}
+                        </p>
                       </div>
-                      
-                      <button 
+
+                      <button
                         onClick={() => handleDeleteSaved(job.id, job.title)}
                         className="p-2 text-gray-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
                         title="Unsave position"
@@ -1040,13 +1231,20 @@ export default function DashboardPortal({
             <div className="md:col-span-5 bg-[#21222D] text-white rounded-2xl p-5 shadow-md flex flex-col justify-between text-left">
               <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-indigo-200 uppercase tracking-wider font-mono">Profile Strength</h4>
-                  <p className="text-lg font-black tracking-tight text-white mt-1">{profileCompletePercent}% Complete</p>
+                  <h4 className="text-xs font-bold text-indigo-200 uppercase tracking-wider font-mono">
+                    Profile Strength
+                  </h4>
+                  <p className="text-lg font-black tracking-tight text-white mt-1">
+                    {profileCompletePercent}% Complete
+                  </p>
                 </div>
 
                 {/* Radial Gauge matching screenshot */}
                 <div className="relative w-12 h-12 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <svg
+                    className="w-full h-full transform -rotate-90"
+                    viewBox="0 0 36 36"
+                  >
                     <path
                       className="text-gray-800"
                       strokeWidth="3.5"
@@ -1064,21 +1262,30 @@ export default function DashboardPortal({
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                   </svg>
-                  <span className="absolute text-[9px] font-black font-mono text-indigo-200">{profileCompletePercent}%</span>
+                  <span className="absolute text-[9px] font-black font-mono text-indigo-200">
+                    {profileCompletePercent}%
+                  </span>
                 </div>
               </div>
 
               <p className="text-[11px] text-gray-300 leading-relaxed mt-4">
-                Add your portfolio link to increase interview invitation chances by <span className="text-indigo-200 font-extrabold animate-pulse">45%</span>.
+                Add your portfolio link to increase interview invitation chances
+                by{" "}
+                <span className="text-indigo-200 font-extrabold animate-pulse">
+                  45%
+                </span>
+                .
               </p>
 
               {/* Mint filled button matching screenshot */}
-              <button 
+              <button
                 onClick={() => {
                   if (onNavigateToProfile) {
                     onNavigateToProfile();
                   } else {
-                    triggerToast("Launching resume parsing workspace... Completed!");
+                    triggerToast(
+                      "Launching resume parsing workspace... Completed!",
+                    );
                   }
                 }}
                 className="w-full py-2.5 bg-white hover:bg-slate-100 text-[#21222D] text-xs font-extrabold rounded-xl tracking-tight transition-all mt-5 shadow-xs cursor-pointer text-center"
@@ -1086,32 +1293,33 @@ export default function DashboardPortal({
                 Complete Profile
               </button>
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       {/* Post New Job Custom Modal Panel */}
       {isPostingModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             onClick={() => setIsPostingModalOpen(false)}
-            className="absolute inset-0 bg-[#21222D]/65 backdrop-blur-xs" 
+            className="absolute inset-0 bg-[#21222D]/65 backdrop-blur-xs"
           />
           <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative z-10 p-6 max-w-sm w-full text-left">
             <h3 className="text-base font-bold text-gray-950 mb-1 flex items-center gap-1.5">
               <Briefcase className="w-5 h-5 text-gray-500" />
               Post Vacancy
             </h3>
-            <p className="text-xs text-gray-400 mb-4">Post directly to Alex's active sandbox dashboard pool.</p>
+            <p className="text-xs text-gray-400 mb-4">
+              Post directly to {userName}&rsquo;s active dashboard pool.
+            </p>
 
             <form onSubmit={handlePostJob} className="space-y-3.5">
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Vacancy Title</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                  Vacancy Title
+                </label>
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Lead Product Designer"
                   value={postedTitle}
@@ -1121,9 +1329,11 @@ export default function DashboardPortal({
               </div>
 
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Company / Organization</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                  Company / Organization
+                </label>
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Stripe"
                   value={postedCompany}
@@ -1133,9 +1343,11 @@ export default function DashboardPortal({
               </div>
 
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Salary Range</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                  Salary Range
+                </label>
+                <input
+                  type="text"
                   placeholder="e.g. $130k - $160K"
                   value={postedSalary}
                   onChange={(e) => setPostedSalary(e.target.value)}
@@ -1144,14 +1356,14 @@ export default function DashboardPortal({
               </div>
 
               <div className="flex gap-2 pt-3">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsPostingModalOpen(false)}
                   className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="flex-1 py-2 bg-[#21222D] text-white hover:bg-slate-800 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
                 >
@@ -1166,22 +1378,26 @@ export default function DashboardPortal({
       {/* Schedule Interview Modal Form popup */}
       {isAddInterviewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             onClick={() => setIsAddInterviewModalOpen(false)}
-            className="absolute inset-0 bg-[#21222D]/65 backdrop-blur-xs" 
+            className="absolute inset-0 bg-[#21222D]/65 backdrop-blur-xs"
           />
           <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative z-10 p-6 max-w-sm w-full text-left">
             <h3 className="text-base font-bold text-gray-950 mb-1 flex items-center gap-1.5">
               <Calendar className="w-5 h-5 text-gray-500 shrink-0" />
               Schedule Interview
             </h3>
-            <p className="text-xs text-gray-400 mb-4">Add a manual interview event directly to your calendar sheet.</p>
+            <p className="text-xs text-gray-400 mb-4">
+              Add a manual interview event directly to your calendar sheet.
+            </p>
 
             <form onSubmit={handleCreateInterview} className="space-y-3.5">
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Company / Organization *</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                  Company / Organization *
+                </label>
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Stripe"
                   value={newIntCompany}
@@ -1191,9 +1407,11 @@ export default function DashboardPortal({
               </div>
 
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Interview Title / Role *</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                  Interview Title / Role *
+                </label>
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Technical UI Screen"
                   value={newIntRole}
@@ -1204,25 +1422,31 @@ export default function DashboardPortal({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Select Date</label>
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                    Select Date
+                  </label>
                   <select
                     value={newIntDate}
                     onChange={(e) => setNewIntDate(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 rounded-xl text-xs focus:ring-2 focus:ring-[#21222D]/20 focus:outline-none focus:bg-white"
                   >
-                    {calendarDays.map(day => {
+                    {calendarDays.map((day) => {
                       const dateVal = `2024-10-${String(day).padStart(2, "0")}`;
                       return (
-                        <option key={day} value={dateVal}>Oct {day}</option>
+                        <option key={day} value={dateVal}>
+                          Oct {day}
+                        </option>
                       );
                     })}
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Time *</label>
-                  <input 
-                    type="text" 
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                    Time *
+                  </label>
+                  <input
+                    type="text"
                     required
                     placeholder="e.g. 10:30 AM"
                     value={newIntTime}
@@ -1233,8 +1457,10 @@ export default function DashboardPortal({
               </div>
 
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Description / Notes</label>
-                <textarea 
+                <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">
+                  Description / Notes
+                </label>
+                <textarea
                   placeholder="Briefly describe notes or agenda..."
                   value={newIntDesc}
                   onChange={(e) => setNewIntDesc(e.target.value)}
@@ -1243,14 +1469,14 @@ export default function DashboardPortal({
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsAddInterviewModalOpen(false)}
                   className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer text-center border-0"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="flex-1 py-2 bg-[#21222D] text-white hover:bg-gray-800 text-xs font-bold rounded-xl transition-all cursor-pointer text-center border-0"
                 >
@@ -1265,9 +1491,9 @@ export default function DashboardPortal({
       {/* Interviews Checklist Popup Modal list */}
       {isInterviewsListModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             onClick={() => setIsInterviewsListModalOpen(false)}
-            className="absolute inset-0 bg-[#21222D]/65 backdrop-blur-xs" 
+            className="absolute inset-0 bg-[#21222D]/65 backdrop-blur-xs"
           />
           <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative z-10 p-6 max-w-md w-full text-left">
             <div className="flex items-center justify-between mb-2">
@@ -1275,7 +1501,7 @@ export default function DashboardPortal({
                 <Calendar className="w-5 h-5 text-gray-500 shrink-0" />
                 Interviews Portfolio
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsInterviewsListModalOpen(false);
                   setIsAddInterviewModalOpen(true);
@@ -1285,13 +1511,18 @@ export default function DashboardPortal({
                 + Schedule New
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-4 font-medium">Keep track of upcoming dates and toggle completion status as interviews conclude.</p>
+            <p className="text-xs text-gray-400 mb-4 font-medium">
+              Keep track of upcoming dates and toggle completion status as
+              interviews conclude.
+            </p>
 
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
               {interviews.length === 0 ? (
                 <div className="text-center py-8 bg-[#f5f6f8] rounded-xl font-mono">
-                  <p className="text-xs text-gray-405">No interview slots listed yet.</p>
-                  <button 
+                  <p className="text-xs text-gray-405">
+                    No interview slots listed yet.
+                  </p>
+                  <button
                     onClick={() => {
                       setIsInterviewsListModalOpen(false);
                       setIsAddInterviewModalOpen(true);
@@ -1303,11 +1534,11 @@ export default function DashboardPortal({
                 </div>
               ) : (
                 interviews.map((item) => (
-                  <div 
-                    key={item.id} 
+                  <div
+                    key={item.id}
                     className={`p-3.5 rounded-2xl transition-all flex items-start justify-between gap-3 ${
-                      item.completed 
-                        ? "bg-slate-50 opacity-60 ml-2" 
+                      item.completed
+                        ? "bg-slate-50 opacity-60 ml-2"
                         : "bg-gray-50"
                     }`}
                   >
@@ -1315,32 +1546,48 @@ export default function DashboardPortal({
                       <button
                         onClick={() => handleToggleInterviewCompleted(item.id)}
                         className={`w-5 h-5 rounded-lg border flex items-center justify-center cursor-pointer transition-all mt-0.5 shrink-0 ${
-                          item.completed 
-                            ? "bg-[#21222D] border-[#21222D] text-white" 
+                          item.completed
+                            ? "bg-[#21222D] border-[#21222D] text-white"
                             : "bg-white border-gray-300 text-transparent hover:border-[#21222D]"
                         }`}
-                        title={item.completed ? "Mark pending" : "Tick as completed"}
+                        title={
+                          item.completed ? "Mark pending" : "Tick as completed"
+                        }
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3.5]" />
                       </button>
 
                       <div>
-                        <h4 className={`text-xs font-black text-gray-950 ${item.completed ? "line-through text-gray-400" : ""}`}>
-                          {item.title} • <span className="text-[#21222D]">{item.company}</span>
+                        <h4
+                          className={`text-xs font-black text-gray-950 ${item.completed ? "line-through text-gray-400" : ""}`}
+                        >
+                          {item.title} •{" "}
+                          <span className="text-[#21222D]">{item.company}</span>
                         </h4>
                         <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
-                          Date: <span className="font-extrabold text-gray-700">Oct {parseInt(item.date.split("-")[2], 10)}, 2024</span> • Time: <span className="font-extrabold text-[#21222D]">{item.time}</span>
+                          Date:{" "}
+                          <span className="font-extrabold text-gray-700">
+                            Oct {parseInt(item.date.split("-")[2], 10)}, 2024
+                          </span>{" "}
+                          • Time:{" "}
+                          <span className="font-extrabold text-[#21222D]">
+                            {item.time}
+                          </span>
                         </p>
                         {item.description && (
-                          <p className={`text-[10px] text-gray-500 mt-1 pl-1.5 border-l-2 border-slate-200 ${item.completed ? "line-through text-gray-400" : ""}`}>
+                          <p
+                            className={`text-[10px] text-gray-500 mt-1 pl-1.5 border-l-2 border-slate-200 ${item.completed ? "line-through text-gray-400" : ""}`}
+                          >
                             {item.description}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <button 
-                      onClick={() => handleDeleteInterview(item.id, item.company)}
+                    <button
+                      onClick={() =>
+                        handleDeleteInterview(item.id, item.company)
+                      }
                       className="p-1 px-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer border-0"
                       title="Remove appointment"
                     >
@@ -1353,9 +1600,10 @@ export default function DashboardPortal({
 
             <div className="flex gap-2 pt-4 mt-3 border-t border-gray-100">
               <div className="flex-1 text-[11px] text-gray-400 font-mono font-bold self-center">
-                📊 {interviews.filter(i => i.completed).length} of {interviews.length} completed
+                📊 {interviews.filter((i) => i.completed).length} of{" "}
+                {interviews.length} completed
               </div>
-              <button 
+              <button
                 onClick={() => setIsInterviewsListModalOpen(false)}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-slate-800 text-xs font-black rounded-xl transition-all cursor-pointer text-center border-0"
               >
@@ -1365,7 +1613,6 @@ export default function DashboardPortal({
           </div>
         </div>
       )}
-
     </div>
   );
 }
