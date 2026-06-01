@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc] px-6 text-center text-[#11121c] transition-colors duration-300 dark:bg-[#11121c] dark:text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc] px-6 text-center text-[#11121c] dark:bg-[#11121c] dark:text-white">
       <h1 className="mb-4 text-5xl font-black tracking-tight">JobNest</h1>
       <p className="mb-10 max-w-xl text-lg text-gray-600 dark:text-gray-400">
         Connect with top employers and discover opportunities that match your

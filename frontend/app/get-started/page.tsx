@@ -4,7 +4,7 @@ import { ArrowRight, Building, Home, UserPlus } from "lucide-react";
 
 export default function GetStartedSelectionPage() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f8fafc] p-6 transition-colors duration-300 dark:bg-[#20212b] sm:p-12">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f8fafc] p-6 dark:bg-[#20212b] sm:p-12">
       <div className="pointer-events-none absolute left-[-10%] top-[-20%] h-[600px] w-[600px] rounded-full bg-indigo-500/10 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-cyan-500/10 blur-[120px]" />
 

@@ -6,7 +6,7 @@ import { User, Building, ArrowRight, Home } from "lucide-react";
 
 export default function LoginSelectionPage() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f8fafc] p-6 transition-colors duration-300 dark:bg-[#20212b] sm:p-12">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f8fafc] p-6 dark:bg-[#20212b] sm:p-12">
       {/* Decorative background glow circles */}
       <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none" />

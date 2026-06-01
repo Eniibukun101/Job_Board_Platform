@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function SignUpPage() {
   return (
-    <div className="relative flex min-h-screen items-stretch bg-white transition-colors duration-300 dark:bg-[#11121c]">
+    <div className="relative flex min-h-screen items-stretch bg-white">
       <div className="flex min-h-screen w-full">
         <div className="hidden min-h-screen items-center justify-center p-12 lg:flex lg:w-[57%]">
           <div className="w-full max-w-[520px]">
@@ -28,12 +28,12 @@ export default function SignUpPage() {
             </div>
 
             <div className="space-y-3 text-left">
-              <p className="text-[15px] leading-7 text-neutral-700 dark:text-gray-300">
+              <p className="text-[15px] leading-7 text-neutral-700">
                 Become part of a growing community of students, graduates, and
                 professionals who trust JobNest to connect them with exciting
                 job opportunities and career growth.
               </p>
-              <p className="text-[15px] font-semibold leading-7 text-neutral-800 dark:text-white">
+              <p className="text-[15px] font-semibold leading-7 text-neutral-800">
                 Find roles, build your profile, and make your next move with
                 confidence.
               </p>
@@ -41,9 +41,9 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        <div className="flex w-full items-center bg-white transition-colors duration-300 dark:bg-[#11121c] lg:w-[43%]">
+        <div className="flex w-full items-center bg-white lg:w-[43%]">
           <div className="mx-auto w-full max-w-lg px-8 py-12">
-            <div className="rounded-[20px] border border-gray-100 bg-white px-6 py-6 shadow-md transition-colors duration-300 dark:border-white/10 dark:bg-[#171824]">
+            <div className="rounded-[20px] border border-gray-100 bg-white px-6 py-6 shadow-md">
               <SignUpForm />
             </div>
           </div>

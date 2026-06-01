@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function WelcomeSection() {
   return (
-    <div className="relative hidden flex-col items-center justify-center bg-white px-12 transition-colors duration-300 dark:bg-[#11121c] md:flex md:w-[52%]">
+    <div className="relative hidden flex-col items-center justify-center bg-white px-12 md:flex md:w-[52%]">
       {/* Logo */}
       <div className="absolute top-8 left-8">
         <Image
@@ -25,7 +25,7 @@ export default function WelcomeSection() {
             className="rounded-2xl"
           />
         </div>
-        <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+        <p className="text-sm leading-relaxed text-gray-600">
           Great to see you again! Log in to discover new opportunities, connect
           with employers, and keep growing your professional journey with
           JobNest.
