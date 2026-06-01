@@ -24,12 +24,23 @@ const PORT = process.env.PORT || 5000;
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet());
 //app.use(generalLimiter);
-const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(',').map(url => url.trim());
 
+// CORS with multiple origins support
 app.use(cors({
-  origin: corsOrigins,
+  origin: function (origin, callback) {
+    const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+      .split(',')
+      .map(url => url.trim());
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize()); // Initialize passport
