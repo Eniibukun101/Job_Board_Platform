@@ -43,6 +43,7 @@ import { motion, AnimatePresence } from "motion/react";
 import DashboardPortal from "./components/DashboardPortal";
 import EmployerPortal from "./components/EmployerPortal";
 import ProfilePage from "./components/ProfilePage";
+import CompanyProfilePage from "./components/CompanyProfilePage";
 import JobDetailPage from "./components/JobDetailPage";
 import NotificationsPage from "./components/NotificationsPage";
 
@@ -96,9 +97,9 @@ function getLogoBg(company: string) {
 }
 
 function formatSalary(min?: number | null, max?: number | null) {
-  if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
-  if (min) return `From $${min.toLocaleString()}`;
-  if (max) return `Up to $${max.toLocaleString()}`;
+  if (min && max) return `₦${min.toLocaleString()} - ₦${max.toLocaleString()}`;
+  if (min) return `From ₦${min.toLocaleString()}`;
+  if (max) return `Up to ₦${max.toLocaleString()}`;
   return "Not specified";
 }
 
@@ -881,6 +882,7 @@ export default function App({
         profileRole={authUser?.role || authUser?.userType || "Guest"}
         isPhotoUploaded={isPhotoUploaded}
         photoUrl={profilePhotoUrl}
+        userType={authUser?.userType || "Applicant"}
       />
 
       <AnimatePresence mode="wait">
@@ -977,20 +979,51 @@ export default function App({
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.25 }}
           >
-            <ProfilePage
-              onBackToHome={() => handleNavigate("dashboard")}
-              profile={profile}
-              setProfile={setProfile}
-              isPhotoUploaded={isPhotoUploaded}
-              setIsPhotoUploaded={setIsPhotoUploaded}
-              isCvUploaded={isCvUploaded}
-              setIsCvUploaded={setIsCvUploaded}
-              isAboutMeCompleted={isAboutMeCompleted}
-              setIsAboutMeCompleted={setIsAboutMeCompleted}
-              photoUrl={profilePhotoUrl}
-              onPersistProfileUpdate={persistProfileUpdate}
-              toast={triggerToast}
-            />
+            {authUser?.userType === "Employer" ? (
+              <CompanyProfilePage
+                onBackToHome={() => handleNavigate("employer")}
+                profile={{
+                  name: authUser?.company || authUser?.name || "",
+                  email: authUser?.email || "",
+                  industry: authUser?.industry || "",
+                  website: authUser?.website || "",
+                  location: authUser?.location || "",
+                  bio: authUser?.bio || "",
+                }}
+                setProfile={(updater) => {
+                  // Handle company profile updates
+                  const newProfile = typeof updater === "function"
+                    ? updater({
+                        name: authUser?.company || authUser?.name || "",
+                        email: authUser?.email || "",
+                        industry: authUser?.industry || "",
+                        website: authUser?.website || "",
+                        location: authUser?.location || "",
+                        bio: authUser?.bio || "",
+                      })
+                    : updater;
+                  // Update would be handled by persistProfileUpdate
+                }}
+                logoUrl={profilePhotoUrl}
+                onPersistProfileUpdate={persistProfileUpdate}
+                toast={triggerToast}
+              />
+            ) : (
+              <ProfilePage
+                onBackToHome={() => handleNavigate("dashboard")}
+                profile={profile}
+                setProfile={setProfile}
+                isPhotoUploaded={isPhotoUploaded}
+                setIsPhotoUploaded={setIsPhotoUploaded}
+                isCvUploaded={isCvUploaded}
+                setIsCvUploaded={setIsCvUploaded}
+                isAboutMeCompleted={isAboutMeCompleted}
+                setIsAboutMeCompleted={setIsAboutMeCompleted}
+                photoUrl={profilePhotoUrl}
+                onPersistProfileUpdate={persistProfileUpdate}
+                toast={triggerToast}
+              />
+            )}
           </motion.div>
         )}
 

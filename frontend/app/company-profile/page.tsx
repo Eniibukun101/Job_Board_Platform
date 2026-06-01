@@ -125,7 +125,7 @@ export default function CompanyProfilePage() {
                   value={industry}
                   onChange={(event) => setIndustry(event.target.value)}
                   placeholder="e.g computer Science"
-                  className="h-11 w-full rounded-[9px] border border-[#1f2430] px-4 text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-500 focus:border-accent"
+                  className="h-11 w-full rounded-[9px] border border-gray-300 bg-transparent px-4 text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-500 focus:border-accent"
                   required
                 />
               </div>
@@ -143,7 +143,7 @@ export default function CompanyProfilePage() {
                   value={website}
                   onChange={(event) => setWebsite(event.target.value)}
                   placeholder="e.g https://signup.ng"
-                  className="h-11 w-full rounded-[9px] border border-[#1f2430] px-4 text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-500 focus:border-accent"
+                  className="h-11 w-full rounded-[9px] border border-gray-300 bg-transparent px-4 text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-500 focus:border-accent"
                 />
               </div>
 
@@ -159,7 +159,7 @@ export default function CompanyProfilePage() {
                   value={location}
                   onChange={(event) => setLocation(event.target.value)}
                   placeholder="address, country"
-                  className="h-11 w-full rounded-[9px] border border-[#1f2430] px-4 text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-500 focus:border-accent"
+                  className="h-11 w-full rounded-[9px] border border-gray-300 bg-transparent px-4 text-sm text-gray-900 outline-none placeholder:text-[11px] placeholder:font-semibold placeholder:text-gray-500 focus:border-accent"
                   required
                 />
               </div>

@@ -674,7 +674,7 @@ export default function EmployerPortal({
                           <span className="text-[10px] text-gray-400 font-mono font-medium">
                             Expected package:{" "}
                             <span className="font-black text-[#21222D]">
-                              {associatedJob?.salary || "$110k - $140k"}
+                              {associatedJob?.salary || "₦110k - ₦140k"}
                             </span>
                           </span>
                         </div>
@@ -802,7 +802,7 @@ export default function EmployerPortal({
                     <input
                       type="text"
                       required
-                      placeholder="e.g. $130k - $160k"
+                      placeholder="e.g. ₦130k - ₦160k"
                       value={newSalary}
                       onChange={(e) => setNewSalary(e.target.value)}
                       className="w-full bg-slate-50 border border-gray-250 p-2 text-xs rounded-xl focus:ring-2 focus:ring-[#21222D]/10 focus:outline-none focus:bg-white font-mono font-semibold"
@@ -841,16 +841,16 @@ export default function EmployerPortal({
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 font-bold block mb-1">
-                      Experience
+                      Years of Experience
                     </label>
                     <select
                       value={newExp}
                       onChange={(e) => setNewExp(e.target.value)}
                       className="w-full bg-slate-50 border border-gray-250 p-2 text-[11px] rounded-xl focus:ring-2 focus:ring-[#21222D]/10 focus:outline-none font-semibold text-gray-750"
                     >
-                      <option value="Junior">Junior</option>
-                      <option value="Mid">Mid Level</option>
-                      <option value="Senior">Senior Lead</option>
+                      <option value="Junior">0-2 years (Junior)</option>
+                      <option value="Mid">3-5 years (Mid Level)</option>
+                      <option value="Senior">5+ years (Senior Lead)</option>
                     </select>
                   </div>
                   <div>
