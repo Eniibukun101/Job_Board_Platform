@@ -9,7 +9,7 @@ export default function SignUpPage() {
           <div className="w-full max-w-[520px]">
             <div className="mb-6 flex justify-center lg:justify-start">
               <Image
-                src="/logo.jpeg"
+                src="/logo-removebg-preview.png"
                 alt="Jobnest Logo"
                 width={140}
                 height={140}

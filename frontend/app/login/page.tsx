@@ -17,7 +17,7 @@ export default function LoginSelectionPage() {
         <div className="mb-10 flex flex-col items-center gap-4">
           <Link href="/" className="hover:scale-105 transition-transform">
             <Image
-              src="/logo.jpeg"
+              src="/logo-removebg-preview.png"
               alt="Jobnest"
               width={160}
               height={50}

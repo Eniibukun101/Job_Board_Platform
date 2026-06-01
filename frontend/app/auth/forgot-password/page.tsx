@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="absolute top-8 left-8">
           <Image
-            src="/logo.jpeg"
+            src="/logo-removebg-preview.png"
             alt="Jobnest Logo"
             width={140}
             height={140}
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
           {/* Mobile logo */}
           <div className="md:hidden mb-8 flex justify-center">
             <Image
-              src="/logo.jpeg"
+              src="/logo-removebg-preview.png"
               alt="Jobnest Logo"
               width={56}
               height={56}

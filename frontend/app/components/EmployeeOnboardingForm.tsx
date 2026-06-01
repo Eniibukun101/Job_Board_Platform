@@ -89,7 +89,7 @@ export default function EmployeeOnboardingForm() {
     <main className="min-h-screen bg-[#f2f2f2] px-6 py-6 font-sans text-[#11121c] md:px-10">
       <header className="flex items-center">
         <Image
-          src="/logo.jpeg"
+          src="/logo-removebg-preview.png"
           alt="Jobnest Logo"
           width={120}
           height={120}
