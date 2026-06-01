@@ -57,10 +57,10 @@ export default function CompanySignUpForm() {
 
   return (
     <>
-      <h2 className="text-2xl md:text-3xl font-bold text-primary mb-2">
+      <h2 className="mb-2 text-2xl font-bold text-primary dark:text-white md:text-3xl">
         Register Now!
       </h2>
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">
         Connect with skilled professionals, post job opportunities, and find the
         perfect candidates for your company faster and easier.
       </p>
@@ -90,7 +90,7 @@ export default function CompanySignUpForm() {
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="Company name"
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-12 pr-4 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -110,7 +110,7 @@ export default function CompanySignUpForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Company email"
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-12 pr-4 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -173,7 +173,7 @@ export default function CompanySignUpForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-12 pr-12 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -238,7 +238,7 @@ export default function CompanySignUpForm() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm password"
-              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-12 pr-12 text-gray-900 transition-colors placeholder:text-gray-400 focus:border-primary focus:outline-none dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -255,16 +255,18 @@ export default function CompanySignUpForm() {
         </div>
       </form>
 
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="text-gray-500 text-sm">— or sign in with —</span>
-        <div className="flex-1 h-px bg-gray-200"></div>
+      <div className="my-6 flex items-center gap-4">
+        <div className="h-px flex-1 bg-gray-200 dark:bg-white/10"></div>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          — or sign in with —
+        </span>
+        <div className="h-px flex-1 bg-gray-200 dark:bg-white/10"></div>
       </div>
 
       <button
         type="button"
         onClick={handleGoogle}
-        className="w-full flex items-center justify-center gap-3 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold py-3 rounded-lg transition-colors shadow"
+        className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-gray-200 py-3 font-semibold text-gray-700 shadow transition-colors hover:border-gray-300 dark:border-white/10 dark:bg-white dark:text-[#11121c] dark:hover:border-white/30"
       >
         <img
           src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
@@ -274,7 +276,7 @@ export default function CompanySignUpForm() {
         Continue with Google
       </button>
 
-      <p className="text-center text-gray-600 text-sm mt-6">
+      <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
         Already registered?{" "}
         <Link
           href="/employer"

@@ -42,11 +42,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex bg-white">
+    <div className="relative flex min-h-screen bg-white transition-colors duration-300 dark:bg-[#11121c]">
       <WelcomeSection />
 
-      <div className="flex w-full md:w-[48%] items-center justify-center px-6 py-10 md:px-10 min-h-screen">
-        <div className="w-full max-w-lg rounded-[28px] border border-[#F1EAF8] bg-white px-6 py-8 shadow-[0_20px_60px_rgba(45,38,57,0.08)] md:px-10 md:py-10">
+      <div className="flex min-h-screen w-full items-center justify-center px-6 py-10 md:w-[48%] md:px-10">
+        <div className="w-full max-w-lg rounded-[28px] border border-[#F1EAF8] bg-white px-6 py-8 shadow-[0_20px_60px_rgba(45,38,57,0.08)] transition-colors duration-300 dark:border-white/10 dark:bg-[#171824] dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
           <LoginForm
             email={email}
             setEmail={setEmail}

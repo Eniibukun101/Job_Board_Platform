@@ -1,14 +1,20 @@
-import SignUpForm from '../components/SignUpForm'
-import Image from 'next/image'
+import SignUpForm from "../components/SignUpForm";
+import Image from "next/image";
 
 export default function SignUpPage() {
   return (
-    <div className="relative min-h-screen flex items-stretch bg-white">
-      <div className="w-full h-screen flex">
-        <div className="hidden lg:flex lg:w-[57%] h-full p-12 items-center justify-center">
+    <div className="relative flex min-h-screen items-stretch bg-white transition-colors duration-300 dark:bg-[#11121c]">
+      <div className="flex min-h-screen w-full">
+        <div className="hidden min-h-screen items-center justify-center p-12 lg:flex lg:w-[57%]">
           <div className="w-full max-w-[520px]">
             <div className="mb-6 flex justify-center lg:justify-start">
-              <Image src="/logo.jpeg" alt="Jobnest Logo" width={140} height={140} className="rounded-2xl" />
+              <Image
+                src="/logo.jpeg"
+                alt="Jobnest Logo"
+                width={140}
+                height={140}
+                className="rounded-2xl"
+              />
             </div>
 
             <div className="mb-6 flex justify-center lg:justify-start">
@@ -22,24 +28,27 @@ export default function SignUpPage() {
             </div>
 
             <div className="space-y-3 text-left">
-              <p className="text-[15px] leading-7 text-neutral-700">
-                Become part of a growing community of students, graduates, and professionals who trust JobNest to connect them with exciting job opportunities and career growth.
+              <p className="text-[15px] leading-7 text-neutral-700 dark:text-gray-300">
+                Become part of a growing community of students, graduates, and
+                professionals who trust JobNest to connect them with exciting
+                job opportunities and career growth.
               </p>
-              <p className="text-[15px] leading-7 text-neutral-800 font-semibold">
-                Find roles, build your profile, and make your next move with confidence.
+              <p className="text-[15px] font-semibold leading-7 text-neutral-800 dark:text-white">
+                Find roles, build your profile, and make your next move with
+                confidence.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="w-full lg:w-[43%] bg-white flex items-center">
-          <div className="w-full max-w-lg mx-auto px-8 py-12">
-            <div className="bg-white rounded-[20px] px-6 py-6 shadow-md border border-gray-100">
+        <div className="flex w-full items-center bg-white transition-colors duration-300 dark:bg-[#11121c] lg:w-[43%]">
+          <div className="mx-auto w-full max-w-lg px-8 py-12">
+            <div className="rounded-[20px] border border-gray-100 bg-white px-6 py-6 shadow-md transition-colors duration-300 dark:border-white/10 dark:bg-[#171824]">
               <SignUpForm />
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

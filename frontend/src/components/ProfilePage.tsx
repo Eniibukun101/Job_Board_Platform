@@ -96,6 +96,11 @@ export default function ProfilePage({
   // Editing state for Experience
   const [isEditingExperience, setIsEditingExperience] = useState(false);
   const [tempExperiences, setTempExperiences] = useState(profile.experiences);
+  const [localPhotoUrl, setLocalPhotoUrl] = useState(photoUrl);
+
+  useEffect(() => {
+    setLocalPhotoUrl(photoUrl);
+  }, [photoUrl]);
 
   useEffect(() => {
     setTempPersonal({
@@ -115,7 +120,55 @@ export default function ProfilePage({
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = reject;
+      reader.onerror = () =>
+        reject(new Error("Unable to read this file. Please try another one."));
+      reader.readAsDataURL(file);
+    });
+
+  const imageFileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        reject(new Error("Please upload a JPG, PNG, or WebP image."));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = new window.Image();
+        image.onload = () => {
+          const maxSize = 800;
+          const scale = Math.min(
+            1,
+            maxSize / Math.max(image.width, image.height),
+          );
+          const width = Math.max(1, Math.round(image.width * scale));
+          const height = Math.max(1, Math.round(image.height * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+
+          if (!context) {
+            reject(
+              new Error(
+                "Unable to process this image. Please try another one.",
+              ),
+            );
+            return;
+          }
+
+          context.drawImage(image, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        image.onerror = () =>
+          reject(
+            new Error("Unable to read this image. Please try another one."),
+          );
+        image.src = String(reader.result || "");
+      };
+      reader.onerror = () =>
+        reject(new Error("Unable to read this image. Please try another one."));
       reader.readAsDataURL(file);
     });
 
@@ -260,20 +313,45 @@ export default function ProfilePage({
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const encodedFile = await fileToDataUrl(e.target.files[0]);
-      await onPersistProfileUpdate?.({ photoUrl: encodedFile });
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const encodedFile = await imageFileToDataUrl(file);
+      setLocalPhotoUrl(encodedFile);
       setIsPhotoUploaded(true);
-      toast("Profile photo uploaded successfully (+5% Strength)!");
+
+      try {
+        await onPersistProfileUpdate?.({ photoUrl: encodedFile });
+        toast("Profile photo uploaded successfully (+5% Strength)!");
+      } catch (error) {
+        console.warn("Unable to save profile photo:", error);
+        toast("Photo preview updated, but it could not be saved right now.");
+      }
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Unable to upload this photo.",
+      );
+    } finally {
+      e.target.value = "";
     }
   };
 
   const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const encodedFile = await fileToDataUrl(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const encodedFile = await fileToDataUrl(file);
       await onPersistProfileUpdate?.({ resumeUrl: encodedFile });
       setIsCvUploaded(true);
       toast("Resume / CV uploaded successfully (+20% Strength)!");
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Unable to upload this CV.",
+      );
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -328,7 +406,7 @@ export default function ProfilePage({
                 {isPhotoUploaded ? (
                   <div className="w-[150px] h-[150px] rounded-full overflow-hidden bg-slate-100 border-4 border-emerald-50 shadow-sm flex items-center justify-center">
                     <img
-                      src={photoUrl}
+                      src={localPhotoUrl}
                       alt={profile.name || "Profile photo"}
                       className="w-full h-full object-cover"
                     />

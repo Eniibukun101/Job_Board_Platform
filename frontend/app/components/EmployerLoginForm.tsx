@@ -59,10 +59,10 @@ export default function EmployerLoginForm() {
   return (
     <div className="flex min-h-full w-full items-center">
       <div className="w-full max-w-[460px] lg:max-w-[510px]">
-        <h1 className="text-2xl font-extrabold text-black sm:text-3xl">
+        <h1 className="text-2xl font-extrabold text-black dark:text-white sm:text-3xl">
           Already back
         </h1>
-        <p className="mt-9 max-w-[430px] text-sm leading-5 text-gray-500">
+        <p className="mt-9 max-w-[430px] text-sm leading-5 text-gray-500 dark:text-gray-300">
           Welcome back, Employer. Manage job postings, review applications, and
           discover top talent all in one place.
         </p>
@@ -91,7 +91,7 @@ export default function EmployerLoginForm() {
               value={companyName}
               onChange={(event) => setCompanyName(event.target.value)}
               placeholder="Company name"
-              className="h-10 w-full rounded-[8px] border border-[#1f2430] bg-white pl-14 pr-4 text-sm text-gray-900 outline-none transition-colors placeholder:text-[11px] placeholder:text-gray-500 focus:border-accent"
+              className="h-10 w-full rounded-[8px] border border-[#1f2430] bg-white pl-14 pr-4 text-sm text-gray-900 outline-none transition-colors placeholder:text-[11px] placeholder:text-gray-500 focus:border-accent dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -109,7 +109,7 @@ export default function EmployerLoginForm() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Company email"
-              className="h-10 w-full rounded-[8px] border border-[#1f2430] bg-white pl-14 pr-4 text-sm text-gray-900 outline-none transition-colors placeholder:text-[11px] placeholder:text-gray-500 focus:border-accent"
+              className="h-10 w-full rounded-[8px] border border-[#1f2430] bg-white pl-14 pr-4 text-sm text-gray-900 outline-none transition-colors placeholder:text-[11px] placeholder:text-gray-500 focus:border-accent dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -165,7 +165,7 @@ export default function EmployerLoginForm() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
-              className="h-10 w-full rounded-[8px] border border-[#1f2430] bg-white pl-14 pr-11 text-sm text-gray-900 outline-none transition-colors placeholder:text-[11px] placeholder:text-gray-500 focus:border-accent"
+              className="h-10 w-full rounded-[8px] border border-[#1f2430] bg-white pl-14 pr-11 text-sm text-gray-900 outline-none transition-colors placeholder:text-[11px] placeholder:text-gray-500 focus:border-accent dark:border-white/10 dark:bg-[#20212b] dark:text-white dark:placeholder:text-gray-500"
               required
             />
           </div>
@@ -182,11 +182,11 @@ export default function EmployerLoginForm() {
         </form>
 
         <div className="mx-auto mt-14 flex w-full max-w-[260px] items-center gap-2">
-          <div className="h-px flex-1 bg-gray-300" />
+          <div className="h-px flex-1 bg-gray-300 dark:bg-white/10" />
           <span className="text-[11px] font-medium text-gray-400">
             or sign in with
           </span>
-          <div className="h-px flex-1 bg-gray-300" />
+          <div className="h-px flex-1 bg-gray-300 dark:bg-white/10" />
         </div>
 
         <button
@@ -202,7 +202,7 @@ export default function EmployerLoginForm() {
           Continue with Google
         </button>
 
-        <p className="mt-8 text-center text-[11px] font-semibold text-gray-300">
+        <p className="mt-8 text-center text-[11px] font-semibold text-gray-500 dark:text-gray-300">
           Don&apos;t have an account?{" "}
           <Link href="/company-signup" className="text-accent hover:underline">
             Sign up
