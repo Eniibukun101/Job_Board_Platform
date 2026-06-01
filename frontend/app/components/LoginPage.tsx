@@ -25,8 +25,8 @@ export default function LoginPage() {
       saveStoredAuth(response);
       router.push(
         response.user.userType === "Employer"
-          ? "/company-profile"
-          : "/employee-onboarding",
+          ? "/portal/employer"
+          : "/portal/dashboard",
       );
     } catch (err) {
       setError(

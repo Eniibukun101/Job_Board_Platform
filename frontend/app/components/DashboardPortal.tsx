@@ -442,7 +442,7 @@ export default function DashboardPortal({
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-black text-gray-900 tracking-tight">Welcome back, Alex</h1>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">Here's what's happening with your job search today.</p>
+              <p className="text-xs text-gray-500 mt-0.5">{"Here's what's happening with your job search today."}</p>
             </div>
 
             {/* Stat Counters on the Right (Borders and strokes completely removed) */}
@@ -1106,7 +1106,7 @@ export default function DashboardPortal({
               <Briefcase className="w-5 h-5 text-gray-500" />
               Post Vacancy
             </h3>
-            <p className="text-xs text-gray-400 mb-4">Post directly to Alex's active sandbox dashboard pool.</p>
+            <p className="text-xs text-gray-400 mb-4">{"Post directly to Alex's active sandbox dashboard pool."}</p>
 
             <form onSubmit={handlePostJob} className="space-y-3.5">
               <div>

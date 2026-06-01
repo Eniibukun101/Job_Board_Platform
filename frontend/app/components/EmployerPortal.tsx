@@ -276,7 +276,7 @@ export default function EmployerPortal({
             </h1>
             
             <p className="text-gray-400 text-xs mt-2 max-w-2xl leading-relaxed">
-              Define state-of-the-art job descriptions, monitor received applications, and progress candidates. Updating their status immediately pushes dynamic timeline alerts into job seekers' personal portfolios.
+              {"Define state-of-the-art job descriptions, monitor received applications, and progress candidates. Updating their status immediately pushes dynamic timeline alerts into job seekers' personal portfolios."}
             </p>
           </div>
 

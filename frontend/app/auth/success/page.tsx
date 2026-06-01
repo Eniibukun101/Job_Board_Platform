@@ -1,11 +1,11 @@
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { getCurrentUser } from "@/lib/api";
 import { saveStoredAuth } from "@/lib/auth";
 
-export default function AuthSuccessPage() {
+function AuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Signing you in...");
@@ -26,8 +26,8 @@ export default function AuthSuccessPage() {
         saveStoredAuth({ token: authToken, user: response.user });
         router.replace(
           response.user.userType === "Employer"
-            ? "/company-profile"
-            : "/employee-onboarding",
+            ? "/portal/employer"
+            : "/portal/dashboard",
         );
       } catch {
         setMessage(
@@ -48,5 +48,26 @@ export default function AuthSuccessPage() {
         <p className="mt-4 text-sm text-gray-600">{message}</p>
       </div>
     </main>
+  );
+}
+
+function AuthSuccessFallback() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 text-center">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <h1 className="text-2xl font-bold text-primary">
+          Google Authentication
+        </h1>
+        <p className="mt-4 text-sm text-gray-600">Signing you in...</p>
+      </div>
+    </main>
+  );
+}
+
+export default function AuthSuccessPage() {
+  return (
+    <Suspense fallback={<AuthSuccessFallback />}>
+      <AuthSuccessContent />
+    </Suspense>
   );
 }

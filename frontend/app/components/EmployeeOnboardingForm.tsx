@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { updateCurrentUserProfile } from "@/lib/api";
 import { getStoredAuth, updateStoredUser } from "@/lib/auth";
@@ -25,6 +26,7 @@ const qualifications = [
 ];
 
 export default function EmployeeOnboardingForm() {
+  const router = useRouter();
   const [jobType, setJobType] = useState("Part-time");
   const [salaryRange, setSalaryRange] = useState(salaryRanges[0]);
   const [role, setRole] = useState("");
@@ -71,6 +73,7 @@ export default function EmployeeOnboardingForm() {
 
       updateStoredUser(response.user);
       setSuccessMessage("You’re all set! Your preferences have been saved.");
+      router.push("/portal/dashboard");
     } catch (err) {
       setError(
         err instanceof Error
