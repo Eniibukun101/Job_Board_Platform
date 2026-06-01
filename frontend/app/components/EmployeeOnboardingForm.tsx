@@ -10,10 +10,12 @@ import { getStoredAuth, updateStoredUser } from "@/lib/auth";
 const jobTypes = ["Full time", "Part-time", "Contract", "Internship"];
 
 const salaryRanges = [
-  "$50 - $100k/year",
-  "$100k - $150k/year",
-  "$150k - $200k/year",
-  "$200k+/year",
+  "₦50k - ₦500k/year",
+  "₦500k - ₦1,000,000/year",
+  "₦1,000,000 - ₦2,000,000/year",
+  "2 million and above",
+
+
 ];
 
 const qualifications = [
