@@ -12,7 +12,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const sequelize = require("./config/database");
-const { generalLimiter } = require("./middleware/rateLimiter");
+//const { generalLimiter } = require("./middleware/rateLimiter");
 const passport = require("./middleware/passport"); // Google OAuth
 
 // Load models with associations
@@ -23,13 +23,13 @@ const PORT = process.env.PORT || 5000;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(generalLimiter);
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-    credentials: true,
-  }),
-);
+//app.use(generalLimiter);
+const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(',').map(url => url.trim());
+
+app.use(cors({
+  origin: corsOrigins,
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize()); // Initialize passport
