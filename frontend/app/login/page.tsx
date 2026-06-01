@@ -13,20 +13,6 @@ export default function LoginSelectionPage() {
 
       {/* Main Container */}
       <div className="w-full max-w-4xl flex flex-col items-center z-10">
-        {/* Logo and Home Navigation */}
-        <div className="mb-10 flex flex-col items-center gap-4">
-          <Link href="/" className="hover:scale-105 transition-transform">
-            <Image
-              src="/logo-removebg-preview.png"
-              alt="Jobnest"
-              width={160}
-              height={50}
-              priority
-              className="h-12 w-auto rounded-xl object-contain shadow-lg ring-1 ring-black/10 dark:ring-white/10"
-            />
-          </Link>
-        </div>
-
         {/* Title Block */}
         <div className="text-center mb-12">
           <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-[#11121c] dark:text-white sm:text-4xl">
