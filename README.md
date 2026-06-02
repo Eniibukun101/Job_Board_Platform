@@ -6,7 +6,8 @@ JobNest is a full-stack job board web application built to connect job seekers w
 
 The application supports two distinct user roles — **Employee (Applicant)** and **Employer** — each with their own portal, navigation, and set of features.
 
-> **Live Application:** [https://job-board-platform-msw6.onrender.com](https://job-board-platform-msw6.onrender.com)
+> Live Application: https://jobboard-frontend-dun.vercel.app
+Live Backend API: https://job-board-platform-msw6.onrender.com
 
 ---
 
@@ -359,7 +360,8 @@ An animated modal (Framer Motion) for creating or updating a job listing:
 1. User clicks **"Sign in with Google"** on the login page
 2. Frontend calls `getGoogleAuthUrl(userType)` from `lib/api.ts` to get the OAuth URL
 3. User is redirected to Google's sign-in page
-4. After successful Google login, the backend redirects to `/auth/success?token=<jwt>`
+4. After successful Google login, the backend redirects to '/auth/google/callback?token=<jwt>'
+
 5. The `AuthSuccessPage` component extracts the token from the URL, saves it using `saveStoredAuth()`, and redirects to the correct portal
 
 ---
