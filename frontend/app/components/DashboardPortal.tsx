@@ -94,7 +94,7 @@ export default function DashboardPortal({
       company: "Stellar Creative",
       location: "London (Remote)",
       type: "Full-time",
-      salary: "$120k - $150k",
+      salary: "₦120k - ₦150k",
       saved: true
     },
     {
@@ -103,7 +103,7 @@ export default function DashboardPortal({
       company: "Innovate Systems",
       location: "New York",
       type: "Hybrid",
-      salary: "$140k - $170k",
+      salary: "₦140k - ₦170k",
       saved: false
     },
     {
@@ -112,7 +112,7 @@ export default function DashboardPortal({
       company: "CloudPay",
       location: "Berlin",
       type: "Remote",
-      salary: "$90k - $115k",
+      salary: "₦90k - ₦115k",
       saved: true
     },
     {
@@ -121,7 +121,7 @@ export default function DashboardPortal({
       company: "Figma Inc",
       location: "San Francisco",
       type: "Full-time",
-      salary: "$160k - $190k",
+      salary: "₦160k - ₦190k",
       saved: false
     }
   ]);
@@ -1137,7 +1137,7 @@ export default function DashboardPortal({
                 <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold block mb-1">Salary Range</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. $130k - $160K"
+                  placeholder="e.g. ₦130k - ₦160K"
                   value={postedSalary}
                   onChange={(e) => setPostedSalary(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 rounded-xl text-xs focus:ring-2 focus:ring-indigo-200 focus:outline-none focus:bg-white"
