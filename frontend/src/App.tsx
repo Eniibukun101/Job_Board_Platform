@@ -104,11 +104,18 @@ function formatSalary(min?: number | null, max?: number | null) {
 }
 
 function parseSalaryRange(salary: string) {
-  const values = salary
-    .match(/\d[\d,]*/g)
-    ?.map((value) => Number(value.replace(/,/g, "")));
+  const values = Array.from(salary.matchAll(/(\d[\d,]*)(?:\s*)([kKmM])?/g)).map(
+    (match) => {
+      const numericValue = Number((match[1] || "").replace(/,/g, ""));
+      const suffix = (match[2] || "").toLowerCase();
 
-  if (!values?.length) {
+      if (suffix === "m") return numericValue * 1_000_000;
+      if (suffix === "k") return numericValue * 1_000;
+      return numericValue;
+    },
+  );
+
+  if (!values.length) {
     return { salaryMin: null, salaryMax: null };
   }
 
@@ -532,7 +539,9 @@ export default function App({
 
   // Add a new job posted by the employer to both global and custom tracks
   const handleAddNewJob = async (newJob: Job) => {
-    if (!authToken) return;
+    if (!authToken) {
+      throw new Error("Please sign in as an employer to publish a vacancy.");
+    }
 
     try {
       const { salaryMin, salaryMax } = parseSalaryRange(newJob.salary);
@@ -560,8 +569,12 @@ export default function App({
       const createdJob = mapBackendJobToUi(response.job);
       setCustomActiveJobs((prev) => [createdJob, ...prev]);
       setJobs((prev) => [createdJob, ...prev]);
+      await loadEmployerData(authToken);
     } catch (error) {
       console.error("Could not post job to backend:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Unable to publish vacancy right now.");
     }
   };
 
@@ -580,7 +593,9 @@ export default function App({
 
   // Update an existing job published by the employer
   const handleUpdateJob = async (updatedJob: Job) => {
-    if (!authToken) return;
+    if (!authToken) {
+      throw new Error("Please sign in as an employer to update a vacancy.");
+    }
 
     try {
       const { salaryMin, salaryMax } = parseSalaryRange(updatedJob.salary);
@@ -616,8 +631,12 @@ export default function App({
       if (selectedJobForDetails && selectedJobForDetails.id === updatedJob.id) {
         setSelectedJobForDetails(mappedJob);
       }
+      await loadEmployerData(authToken);
     } catch (error) {
       console.error("Could not update job on backend:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Unable to update vacancy right now.");
     }
   };
 
@@ -992,16 +1011,17 @@ export default function App({
                 }}
                 setProfile={(updater) => {
                   // Handle company profile updates
-                  const newProfile = typeof updater === "function"
-                    ? updater({
-                        name: authUser?.company || authUser?.name || "",
-                        email: authUser?.email || "",
-                        industry: authUser?.industry || "",
-                        website: authUser?.website || "",
-                        location: authUser?.location || "",
-                        bio: authUser?.bio || "",
-                      })
-                    : updater;
+                  const newProfile =
+                    typeof updater === "function"
+                      ? updater({
+                          name: authUser?.company || authUser?.name || "",
+                          email: authUser?.email || "",
+                          industry: authUser?.industry || "",
+                          website: authUser?.website || "",
+                          location: authUser?.location || "",
+                          bio: authUser?.bio || "",
+                        })
+                      : updater;
                   // Update would be handled by persistProfileUpdate
                 }}
                 logoUrl={profilePhotoUrl}
@@ -1049,6 +1069,7 @@ export default function App({
               setInterviews={setInterviews}
               onUpdateApplicationStatus={handleUpdateApplicationStatus}
               onNavigate={handleNavigate}
+              employerCompanyName={authUser?.company || authUser?.name || ""}
               onLogOutEmployer={() => {
                 clearStoredAuth();
                 setAuthToken(null);

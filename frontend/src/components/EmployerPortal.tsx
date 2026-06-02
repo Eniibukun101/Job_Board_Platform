@@ -25,9 +25,10 @@ import { motion, AnimatePresence } from "motion/react";
 
 interface EmployerPortalProps {
   jobs: Job[];
-  onAddNewJob: (newJob: Job) => void;
+  onAddNewJob: (newJob: Job) => Promise<void> | void;
   onDeleteJob: (jobId: string) => void;
-  onUpdateJob?: (job: Job) => void;
+  onUpdateJob?: (job: Job) => Promise<void> | void;
+  employerCompanyName?: string;
   onLogOutEmployer?: () => void;
   applications: Application[];
   setApplications: React.Dispatch<React.SetStateAction<Application[]>>;
@@ -50,6 +51,7 @@ export default function EmployerPortal({
   onDeleteJob,
   onUpdateJob,
   onLogOutEmployer,
+  employerCompanyName,
   applications,
   setApplications,
   notifications,
@@ -100,7 +102,19 @@ export default function EmployerPortal({
     setIsCreateModalOpen(true);
   };
 
-  const handleCreateJobSubmit = (e: React.FormEvent) => {
+  const resetJobForm = () => {
+    setEditingJob(null);
+    setNewTitle("");
+    setNewCompany(employerCompanyName || "");
+    setNewSalary("");
+    setNewLocation("");
+    setNewType("Full-time");
+    setNewExp("Mid");
+    setNewCategory("developer-software");
+    setNewDescription("");
+  };
+
+  const handleCreateJobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
       !newTitle ||
@@ -113,50 +127,57 @@ export default function EmployerPortal({
       return;
     }
 
-    if (editingJob) {
-      const updatedJob: Job = {
-        ...editingJob,
-        title: newTitle,
-        company: newCompany,
-        location: newLocation,
-        type: newType,
-        salary: newSalary,
-        description: newDescription,
-        category: newCategory,
-        experienceLevel: newExp,
-      };
-      if (onUpdateJob) {
-        onUpdateJob(updatedJob);
-      }
-      triggerLocalToast(`Successfully updated vacancy "${newTitle}"!`);
-    } else {
-      const newJob: Job = {
-        id: `employer-custom-${Date.now()}`,
-        title: newTitle,
-        company: newCompany,
-        logoBg: getRandomLogoBg(),
-        location: newLocation,
-        type: newType,
-        salary: newSalary,
-        description: newDescription,
-        postedTime: "Posted just now",
-        category: newCategory,
-        applicants: 0,
-        experienceLevel: newExp,
-      };
-
-      onAddNewJob(newJob);
-      triggerLocalToast(`Successfully posted vacancy "${newTitle}"!`);
+    if (newDescription.trim().length < 20) {
+      triggerLocalToast("Job description must be at least 20 characters.");
+      return;
     }
 
-    // Close & reset
-    setIsCreateModalOpen(false);
-    setEditingJob(null);
-    setNewTitle("");
-    setNewCompany("");
-    setNewSalary("");
-    setNewLocation("");
-    setNewDescription("");
+    try {
+      if (editingJob) {
+        const updatedJob: Job = {
+          ...editingJob,
+          title: newTitle,
+          company: newCompany,
+          location: newLocation,
+          type: newType,
+          salary: newSalary,
+          description: newDescription,
+          category: newCategory,
+          experienceLevel: newExp,
+        };
+        if (onUpdateJob) {
+          await onUpdateJob(updatedJob);
+        }
+        triggerLocalToast(`Successfully updated vacancy "${newTitle}"!`);
+      } else {
+        const newJob: Job = {
+          id: `employer-custom-${Date.now()}`,
+          title: newTitle,
+          company: newCompany,
+          logoBg: getRandomLogoBg(),
+          location: newLocation,
+          type: newType,
+          salary: newSalary,
+          description: newDescription,
+          postedTime: "Posted just now",
+          category: newCategory,
+          applicants: 0,
+          experienceLevel: newExp,
+        };
+
+        await onAddNewJob(newJob);
+        triggerLocalToast(`Successfully posted vacancy "${newTitle}"!`);
+      }
+
+      setIsCreateModalOpen(false);
+      resetJobForm();
+    } catch (error) {
+      triggerLocalToast(
+        error instanceof Error
+          ? error.message
+          : "Unable to publish vacancy right now.",
+      );
+    }
   };
 
   const getRandomLogoBg = () => {
@@ -332,12 +353,7 @@ export default function EmployerPortal({
             </div>
             <button
               onClick={() => {
-                setEditingJob(null);
-                setNewTitle("");
-                setNewCompany("");
-                setNewSalary("");
-                setNewLocation("");
-                setNewDescription("");
+                resetJobForm();
                 setIsCreateModalOpen(true);
               }}
               className="py-3 px-5 bg-[#212230] hover:bg-gray-805 text-white text-xs font-black rounded-2xl shadow-lg flex items-center gap-2 cursor-pointer transition-all active:scale-95 border border-gray-700 self-center"
@@ -836,7 +852,7 @@ export default function EmployerPortal({
                       <option value="Full-time">Full-time</option>
                       <option value="Part-time">Part-time</option>
                       <option value="Contract">Contract</option>
-                      <option value="Remote">Remote</option>
+                      <option value="Internship">Internship</option>
                     </select>
                   </div>
                   <div>
@@ -888,7 +904,10 @@ export default function EmployerPortal({
                 <div className="flex gap-2.5 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
+                    onClick={() => {
+                      setIsCreateModalOpen(false);
+                      if (!editingJob) resetJobForm();
+                    }}
                     className="flex-1 py-2.5 bg-gray-150 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl cursor-pointer border-0"
                   >
                     Cancel
