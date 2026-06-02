@@ -957,7 +957,7 @@ export default function App({
           </motion.div>
         )}
 
-        {currentView === "dashboard" && (
+        {currentView === "dashboard" && authUser?.userType === "Applicant" && (
           <motion.div
             key="dashboard-screen"
             initial={{ opacity: 0, scale: 0.98 }}

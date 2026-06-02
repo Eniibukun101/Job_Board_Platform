@@ -239,31 +239,29 @@ export default function Header({
             </button>
           )}
 
-          {isLoggedIn && (
+          {isLoggedIn && userType === "Applicant" && (
             <>
               {/* Home icon only for Applicants, not for Employers */}
-              {userType === "Applicant" && (
-                <button
-                  onClick={() => {
-                    if (onNavigate) {
-                      onNavigate("dashboard");
-                    } else {
-                      alert("Demo Mode: Home shortcut clicked.");
-                    }
-                  }}
-                  className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-                    currentView === "dashboard"
-                      ? "bg-[#21222D]/10 text-[#21222D]"
-                      : "text-gray-500 hover:text-[#21222D] hover:bg-gray-100"
-                  }`}
-                  title="Dashboard Portal"
-                  id="header-nav-reactive-home"
-                >
-                  <Home
-                    className={`w-5 h-5 ${currentView === "dashboard" ? "text-[#21222D]" : "text-gray-500"}`}
-                  />
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate("dashboard");
+                  } else {
+                    alert("Demo Mode: Home shortcut clicked.");
+                  }
+                }}
+                className={`p-2.5 rounded-xl transition-all cursor-pointer ${
+                  currentView === "dashboard"
+                    ? "bg-[#21222D]/10 text-[#21222D]"
+                    : "text-gray-500 hover:text-[#21222D] hover:bg-gray-100"
+                }`}
+                title="Dashboard Portal"
+                id="header-nav-reactive-home"
+              >
+                <Home
+                  className={`w-5 h-5 ${currentView === "dashboard" ? "text-[#21222D]" : "text-gray-500"}`}
+                />
+              </button>
 
               <button
                 onClick={() => {
